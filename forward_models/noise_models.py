@@ -1,15 +1,17 @@
 """
-Contains models required for the AD-based ptychography
+Contains noise models for ad-based ptychography
 """
-import torch.nn.functional as F
+# import torch.nn.functional as F
 import torch.nn as nn
 import torch as th
-import torch.fft as th_fft
-from torch.utils.data import Dataset, DataLoader
+
+# import torch.fft as th_fft
+# from torch.utils.data import Dataset, DataLoader
+
 # from propagators import grid
 
-th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
-th.backends.cudnn.benchmark = True
+# th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
+# th.backends.cudnn.benchmark = True
 
 
 class Additive_Gaussian_noise(th.nn.Module):
