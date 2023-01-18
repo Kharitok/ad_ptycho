@@ -1,29 +1,29 @@
 """
 Contains propagators required for the AD-based ptychography
 """
-import torch.nn.functional as F
-import torch.nn as nn
+# import torch.nn.functional as F
+# import torch.nn as nn
 import torch as th
 import torch.fft as th_fft
-from torch.utils.data import Dataset, DataLoader
+# from torch.utils.data import Dataset, DataLoader
 
 th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
-th.backends.cudnn.benchmark = True
+# th.backends.cudnn.benchmark = True
 
 # ___________Fourrier transform staff___________
 
 
-def th_ff(a):
+def th_ff(field):
     """FFT routine for centered data"""
     return th_fft.fftshift(
-        th_fft.fft2(th_fft.ifftshift(a, dim=(-1, -2)), norm="backward"), dim=(-1, -2)
+        th_fft.fft2(th_fft.ifftshift(field, dim=(-1, -2)), norm="backward"), dim=(-1, -2)
     )
 
 
-def th_iff(a):
+def th_iff(field):
     """IFFT routine for centered data"""
     return th_fft.fftshift(
-        th_fft.ifft2(th_fft.ifftshift(a, dim=(-1, -2)), norm="backward"), dim=(-1, -2)
+        th_fft.ifft2(th_fft.ifftshift(field, dim=(-1, -2)), norm="backward"), dim=(-1, -2)
     )
 
 
@@ -38,7 +38,7 @@ def grid(
     return grid of the field as a meshgrid
     """
     dx, dy = pixel_size, pixel_size
-    (Nx,) = pixel_num, pixel_num
+    (Nx,Ny) = pixel_num, pixel_num
 
     grid_ = th.arange(0, Nx, 1) - Nx // 2
 
@@ -85,7 +85,7 @@ def fourrier_scaled_grid(
 # ___________Propagators___________
 
 
-class Propagator_Fresnel_single_transform_flux_preserving(th.nn.Module):
+class PropagatorFresnelSingleTransformFLuxPreserving(th.nn.Module):
     """
     Fresnel Propagator with complex torch
     """
@@ -121,13 +121,15 @@ class Propagator_Fresnel_single_transform_flux_preserving(th.nn.Module):
         self.num = pixel_num
 
     def forward(self, X):
+        """Performs forward propagation"""
         return self.mul1 * th_ff(X * self.mul2) / self.num
 
     def inverse(self, X):
+        """Performs inverse propagation"""
         return self.mul1_inv * th_iff(X * self.mul2_inv) * self.num
 
 
-class Propagator_Fraunh_intensity_flux_preserving(th.nn.Module):
+class PropagatorFraunhFluxPreserving(th.nn.Module):
     """
     Fresnel Propagator with complex torch
     """
@@ -136,12 +138,13 @@ class Propagator_Fraunh_intensity_flux_preserving(th.nn.Module):
         self,
         pixel_num,
     ):
-
         super().__init__()
         self.num = pixel_num
 
     def forward(self, X):
+        """Performs forward propagation"""
         return th_ff(X) / self.num
 
     def inverse(self, X):
+        """Performs inverse propagation"""
         return th_iff(X) * self.num
