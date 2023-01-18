@@ -1,16 +1,16 @@
 """
-Contains models required for the AD-based ptychography
+Shifter models for AD ptychography
 """
 import torch.nn.functional as F
 import torch.nn as nn
 import torch as th
-import torch.fft as th_fft
-from torch.utils.data import Dataset, DataLoader
+
+# import torch.fft as th_fft
+# from torch.utils.data import Dataset, DataLoader
 # from propagators import grid
 
-th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
-th.backends.cudnn.benchmark = True
-
+# th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
+# th.backends.cudnn.benchmark = True
 
 
 # ___________Roration matricies___________
@@ -54,9 +54,10 @@ def get_shear_mat(shear_x, shear_y):
 # ___________Shifters___________
 
 
-class Shifter_default(th.nn.Module):
+class ShifterDefault(th.nn.Module):
     """Scans the sample using differentiable affine transformation, performs position correction by optimizing xand y shifts
-    init_shifts are assumed to be (N,2) array or tensor (N_pos,[x,y]) in pixels +y = |^, +x = <-"""
+    init_shifts are assumed to be (N,2) array or tensor (N_pos,[x,y]) in pixels +y = |^, +x = <-
+    """
 
     def __init__(self, init_shifts, borders, sample_size, mode="bilinear"):
         super().__init__()
@@ -90,7 +91,7 @@ class Shifter_default(th.nn.Module):
         #           th.stack(tensors=[sint,cost,ty+ty_init],dim=1)],dim=1)#good
 
     def forward(self, sample, scan_numbers):
-
+        """get sample function at coordinates corresponding to scan_numbers"""
         full_theta = th.cat(
             [
                 self.left_identity_matrix[scan_numbers],
@@ -119,7 +120,6 @@ class Shifter_default(th.nn.Module):
         ]
 
     def get_coordinates_in_pixels(self):
-
         with th.no_grad():
             init_coords = self.init_shifts / 2 * self.sample_size
             corrected_coords = (
@@ -132,7 +132,7 @@ class Shifter_default(th.nn.Module):
         }
 
 
-class Shifter_elastic(Shifter_default):
+class ShifterElastic(ShifterDefault):
     """Scans the sample using differentiable affine transformation, performs position correction by optimizing xa nd y shifts
     scan positionsrefinement is  performed with the maximum correction limited by  max_correction (pixels) value.
     """
@@ -148,7 +148,6 @@ class Shifter_elastic(Shifter_default):
         self.Tanh = th.nn.Tanh()
 
     def forward(self, sample, scan_numbers):
-
         # here  self.shifts_correction goes through function to be restricted within -1..1 and the nmultiplied by self.max_correction
         full_theta = th.cat(
             [
@@ -179,7 +178,6 @@ class Shifter_elastic(Shifter_default):
         ]
 
     def get_coordinates_in_pixels(self):
-
         with th.no_grad():
             init_coords = self.init_shifts / 2 * self.sample_size
             corrected_coords = (
@@ -197,7 +195,7 @@ class Shifter_elastic(Shifter_default):
         }
 
 
-class Shifter_rotational(Shifter_default):
+class ShifterRotational(ShifterDefault):
     """Scans the sample using differentiable affine transformation, performs position correction by optimizing xand y shifts.
     In addition tries to correct for possible sample rotation at the each of the scan positions
     """
@@ -218,7 +216,6 @@ class Shifter_rotational(Shifter_default):
         )
 
     def forward(self, sample, scan_numbers):
-
         resulting_rotations = (
             self.rotation_correction[scan_numbers]
             + self.rotations_initial[scan_numbers]
@@ -259,7 +256,6 @@ class Shifter_rotational(Shifter_default):
         ]
 
     def get_coordinates_in_pixels(self):
-
         with th.no_grad():
             init_coords = self.init_shifts / 2 * self.sample_size
             corrected_coords = (
@@ -277,7 +273,7 @@ class Shifter_rotational(Shifter_default):
         }
 
 
-class Shifter_rotational_elastic(Shifter_rotational):
+class ShifterRotationalElastic(ShifterRotational):
     """Scans the sample using differentiable affine transformation, performs position correction by optimizing xand y shifts.
     In addition tries to correct for possible sample rotation at the each of the scan positions
     scan positionsrefinement is  performed with the maximum correction limited by  max_correction (pixels) value.
@@ -353,7 +349,6 @@ class Shifter_rotational_elastic(Shifter_rotational):
         ]
 
     def get_coordinates_in_pixels(self):
-
         with th.no_grad():
             init_coords = self.init_shifts / 2 * self.sample_size
             corrected_coords = (

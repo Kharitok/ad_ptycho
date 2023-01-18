@@ -31,7 +31,7 @@ from .element_models.sample_models import (
 )
 
 from .element_models.shifter_models import (
-    Shifter_default,
+    ShifterDefault,
     Shifter_elastic,
     Shifter_rotational,
     Shifter_rotational_elastic,
@@ -107,7 +107,7 @@ class Ptychography_model_transmission(th.nn.Module):
             raise ValueError("Unknown sample_type")
 
         if shifter_type == "default":
-            self.Shifter = Shifter_default(**shifter_params)
+            self.Shifter = ShifterDefault(**shifter_params)
         elif shifter_type == "elastic":
             self.Shifter = Shifter_elastic(**shifter_params)
         elif shifter_type == "rotational":
