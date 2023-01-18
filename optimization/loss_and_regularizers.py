@@ -37,7 +37,8 @@ def l1_norm_refractive_reg(
 def total_variation_reg(
     input_tensor: th.tensor, a1: float = 1, a2: float = 1
 ) -> th.Tensor:
-    """Calculates total variantion of the input tensor weighted with a1 for modulus and a2 for phase"""
+    """Calculates total variantion of the input tensor weighted with a1 for modulus and a2 for phase
+    """
     abs_x = th.abs(input_tensor)
     ang_x = th.angle(input_tensor)
 
@@ -50,7 +51,9 @@ def total_variation_reg(
     )
 
 
-def total_variation_refractive_reg(input_tensor: th.tensor, a1: float = 1, a2: float = 1) -> th.Tensor:
+def total_variation_refractive_reg(
+    input_tensor: th.tensor, a1: float = 1, a2: float = 1
+) -> th.Tensor:
     """Calculates total variantion of the input tensor in refractive form ,
     weighted with a1 for modulus and a2 for phase"""
     abs_x = th.imag(input_tensor)
@@ -68,9 +71,11 @@ def total_variation_refractive_reg(input_tensor: th.tensor, a1: float = 1, a2: f
 # ___________Loss Criterion___________
 
 
-class loss_criterion:
+class LossEstimator:
+    """Class containing different loss functions to be used during the optimization"""
+
     def __init__(self, Mask=None):
-        if not (Mask is None):
+        if Mask is not None:
             self.Mask = Mask
         else:
             self.Mask = None
@@ -81,7 +86,6 @@ class loss_criterion:
         self.PNL_log = th.nn.PoissonNLLLoss(log_input=True)
 
     def __call__(self, Approx, Measured, mode="LSQ", Mask=None):
-
         if (self.Mask is None) and (Mask is None):
             if mode == "LSQ":
                 return self.LSQ(Approx, Measured)
@@ -98,7 +102,6 @@ class loss_criterion:
                 raise ValueError("Unknown mode")
 
         elif not (Mask is None):
-
             Approx = Approx * Mask
             Measured = Measured * Mask
 
