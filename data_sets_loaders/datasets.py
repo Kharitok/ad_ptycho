@@ -10,14 +10,6 @@ from torch.utils.data import Dataset, DataLoader
 # th.backends.cudnn.benchmark = True
 
 
-class DataParallelAtributeTransparent(th.nn.DataParallel):
-    def __getattr__(self, name):
-        try:
-            return super().__getattr__(name)
-        except AttributeError:
-            return getattr(self.module, name)
-
-
 class ShufflingScanPositionsDataset(Dataset):
     def __init__(self, scan_numbers):
         self.len = len(scan_numbers)
