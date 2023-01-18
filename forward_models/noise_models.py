@@ -1,5 +1,5 @@
 """
-Contains noise models for ad-based ptychography
+Contains noise models for AD-based ptychography
 """
 # import torch.nn.functional as F
 import torch.nn as nn
@@ -13,11 +13,11 @@ import torch as th
 # th.backends.cudnn.benchmark = True
 
 
-class Additive_Gaussian_noise(th.nn.Module):
-    "Tries to estimate parameters of the additive gaussian-alike noise"
+class AdditiveGaussianNoise(th.nn.Module):
+    """Parametriezed 2D gaussian noise generator, for use in the ptychography reconstructions
+    to fit the background noise"""
 
     def __init__(self, detector_size, x_init, y_init, sig_x_init, sig_y_init, max_init):
-
         super().__init__()
 
         self.init_parameters = th.tensor(
@@ -31,6 +31,7 @@ class Additive_Gaussian_noise(th.nn.Module):
         self.register_buffer("yy", self.yy_.data)
 
     def get_gaussian(self):
+        """Returns estimated intensity"""
         return self.gaussian_parameters[4] * th.exp(
             -1
             * (
