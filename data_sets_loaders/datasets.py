@@ -2,7 +2,7 @@
 # import torch.nn as nn
 import torch as th
 # import torch.fft as th_fft
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 # from propagators import grid
 
