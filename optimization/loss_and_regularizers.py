@@ -73,7 +73,6 @@ def total_variation_refractive_reg(
 
 class LossEstimator:
     """Class containing different loss functions to be used during the optimization"""
-
     def __init__(self, Mask=None):
         if Mask is not None:
             self.Mask = Mask
