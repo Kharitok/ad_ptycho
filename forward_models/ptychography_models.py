@@ -9,35 +9,31 @@ import torch as th
 # from torch.utils.data import Dataset, DataLoader
 # from propagators import grid
 
-
 from .element_models.probe_models import (
-    Probe_complex_shot_to_shot_constant,
-    Probe_double_real_shot_to_shot_constant,
-    Probe_complex_shot_to_shot_variable,
-    Probe_double_real_shot_to_shot_variable,
-)
-
-from .element_models.propagator_models import (
-    Propagator_Fresnel_single_transform_flux_preserving,
-    Propagator_Fraunh_intensity_flux_preserving,
-
+    ProbeComplexShotToShotConstant,
+    ProbeDoubleRealShotToShotConstant,
+    ProbeComplexShotToShotVariable,
+    ProbeDoubleRealShotToShotVariable,
 )
 
 from .element_models.sample_models import (
-    Sample_complex_TF,
-    Sample_double_real_TF,
-    Sample_refractive,
-    Sample_thickness,
+    SampleComplex,
+    SampleDoubleReal,
+    SampleRefractive,
+    SampleVariableThickness,
+)
+
+from .element_models.propagator_models import (
+    PropagatorFraunhFluxPreserving,
+    PropagatorFresnelSingleTransformFLuxPreserving,
 )
 
 from .element_models.shifter_models import (
     ShifterDefault,
-    Shifter_elastic,
-    Shifter_rotational,
-    Shifter_rotational_elastic,
+    ShifterElastic,
+    ShifterRotational,
+    ShifterRotationalElastic,
 )
-
-
 
 
 # th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
@@ -47,9 +43,11 @@ from .element_models.shifter_models import (
 # ___________Ptychography models___________
 
 
-class Ptychography_model_transmission(th.nn.Module):
-    """Describes transmission ptychography experiment. Returns [scan_positions_num,modes_num,probe_y,probe_x] tensor,
-    which later can be treated depending on the coherent and other properties of the experiment"""
+class PtychographyModelTransmission(th.nn.Module):
+    """Describes transmission ptychography experiment.
+    Returns [scan_positions_num,modes_num,probe_y,probe_x] tensor,
+    which later can be treated depending on the coherent and other properties of the experiment
+    """
 
     def __init__(
         self,
@@ -76,7 +74,8 @@ class Ptychography_model_transmission(th.nn.Module):
 
         sample_params: (sample_size=None, init_sample=None) one must be not None
 
-        shifter_params: (init_shifts,init_rotations,borders,sample_size,max_correction,max_rotation_correction,)
+        shifter_params: (init_shifts,init_rotations,borders,sample_size,
+        max_correction,max_rotation_correction,)
         depending on the shifter type
 
         propagator_params: (pixel_size,pixel_num,wavelength,z,) depending on the propagator type
@@ -85,50 +84,49 @@ class Ptychography_model_transmission(th.nn.Module):
         super().__init__()
 
         if probe_type == "Probe_complex_shot_to_shot_constant":
-            self.Probe = Probe_complex_shot_to_shot_constant(**probe_params)
+            self.Probe = ProbeComplexShotToShotConstant(**probe_params)
         elif probe_type == "Probe_double_real_shot_to_shot_constant":
-            self.Probe = Probe_double_real_shot_to_shot_constant(**probe_params)
+            self.Probe = ProbeDoubleRealShotToShotConstant(**probe_params)
         elif probe_type == "Probe_complex_shot_to_shot_variable":
-            self.Probe = Probe_complex_shot_to_shot_variable(**probe_params)
+            self.Probe = ProbeComplexShotToShotVariable(**probe_params)
         elif probe_type == "Probe_double_real_shot_to_shot_variable":
-            self.Probe = Probe_double_real_shot_to_shot_variable(**probe_params)
+            self.Probe = ProbeDoubleRealShotToShotVariable(**probe_params)
         else:
             raise ValueError("Unknown probe_type")
 
         if sample_type == "complex_TF":
-            self.Sample = Sample_complex_TF(**sample_params)
+            self.Sample = SampleComplex(**sample_params)
         elif sample_type == "double_real_TF":
-            self.Sample = Sample_double_real_TF(**sample_params)
+            self.Sample = SampleDoubleReal(**sample_params)
         elif sample_type == "refractive":
-            self.Sample = Sample_refractive(**sample_params)
+            self.Sample = SampleRefractive(**sample_params)
         elif sample_type == "thickness":
-            self.Sample = Sample_thickness(**sample_params)
+            self.Sample = SampleVariableThickness(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
 
         if shifter_type == "default":
             self.Shifter = ShifterDefault(**shifter_params)
         elif shifter_type == "elastic":
-            self.Shifter = Shifter_elastic(**shifter_params)
+            self.Shifter = ShifterElastic(**shifter_params)
         elif shifter_type == "rotational":
-            self.Shifter = Shifter_rotational(**shifter_params)
+            self.Shifter = ShifterRotational(**shifter_params)
         elif shifter_type == "rotational_elastic":
-            self.Shifter = Shifter_rotational_elastic(**shifter_params)
+            self.Shifter = ShifterRotationalElastic(**shifter_params)
         else:
             raise ValueError("Unknown shifter_type")
 
         if propagator_type == "Fraunhofer":
-            self.Propagator = Propagator_Fraunh_intensity_flux_preserving(
-                **propagator_params
-            )
+            self.Propagator = PropagatorFraunhFluxPreserving(**propagator_params)
         elif propagator_type == "Fresnel_single_transform":
-            self.Propagator = Propagator_Fresnel_single_transform_flux_preserving(
+            self.Propagator = PropagatorFresnelSingleTransformFLuxPreserving(
                 **propagator_params
             )
         else:
             raise ValueError("Unknown propagator_type")
 
     def forward(self, scan_numbers):
+        """Estimate the measured diffraction patterns for corresponding scan numbers"""
         #         print("Sample", self.Sample().shape)
         #         print("Probe", self.Probe(scan_numbers).shape)
         #         print("scan_numbers", scan_numbers.shape)

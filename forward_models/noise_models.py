@@ -7,7 +7,6 @@ import torch as th
 
 # import torch.fft as th_fft
 # from torch.utils.data import Dataset, DataLoader
-
 # from propagators import grid
 
 # th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732

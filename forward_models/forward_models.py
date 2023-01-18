@@ -10,11 +10,18 @@ import torch as th
 # from propagators import grid
 
 
-from .probe_models import (
-    Probe_complex_shot_to_shot_constant,
-    Probe_double_real_shot_to_shot_constant,
-    Probe_complex_shot_to_shot_variable,
-    Probe_double_real_shot_to_shot_variable,
+from element_models.probe_models import (
+    ProbeComplexShotToShotConstant,
+    ProbeDoubleRealShotToShotConstant,
+    ProbeComplexShotToShotVariable,
+    ProbeDoubleRealShotToShotVariable,
+)
+
+from element_models.sample_models import (
+    Sample_complex_TF,
+    Sample_double_real_TF,
+    Sample_refractive,
+    Sample_thickness
 )
 
 
