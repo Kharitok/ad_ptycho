@@ -37,10 +37,12 @@ def save_reconstruction_results(
 
 
 def train(model,noise_generator,optimizer,data_loader,epoch_num,report_interval,backup_interval,early_stopping,Measured_data,savepath):
+    """"Perform the reconstruction for predifined number of iterations with params"""
     reconstruction_summary ={}
     reconstruction_summary['start_time'] = time.time()
     reconstruction_summary['error'] = []
 
+    l1_out = lambda x : l1_norm_reg(x,)
 
 
     for epoch in range(epoch_num):
