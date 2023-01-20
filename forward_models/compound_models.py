@@ -1,5 +1,6 @@
 """Describes forward models (ptychography + noise, detector, etc.) for ad-based ptychography"""
 # import torch.nn as nn
+from typing import Tuple
 import torch as th
 
 from .ptychography_models import PtychographyModelTransmission
@@ -17,9 +18,10 @@ class TransmissionPtychographyWithGaussianNoise(th.nn.Module):
         )
         self.noise_model = AdditiveGaussianNoise(**noise_parameters)
 
-    def forward(self, scan_numbers):
+    def forward(self, scan_numbers) -> Tuple():
         """Estimate the measured diffraction patterns for corresponding scan numbers,
         considering noise, detector, etc.
+
         """
         #         print("Sample", self.Sample().shape)
         #         print("Probe", self.Probe(scan_numbers).shape)
@@ -28,3 +30,12 @@ class TransmissionPtychographyWithGaussianNoise(th.nn.Module):
             th.sqrt(th.sum(th.abs(self.ptychography_model(scan_numbers)) ** 2, axis=1)),
             self.noise_model.get_gaussian(),
         )
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            try:
+                return getattr(self.ptychography_model, name)
+            except AttributeError:
+                return getattr(self.noise_model, name)
