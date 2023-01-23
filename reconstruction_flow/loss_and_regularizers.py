@@ -73,6 +73,7 @@ def total_variation_refractive_reg(
 
 class LossEstimator:
     """Class containing different loss functions to be used during the optimization"""
+
     def __init__(self, Mask=None):
         if Mask is not None:
             self.Mask = Mask
@@ -134,3 +135,26 @@ class LossEstimator:
                 return self.PNL_log(Approx**2, Measured**2)
             else:
                 raise ValueError("Unknown mode")
+
+
+def get_regularization_estimator(regularization_parameters: dict) -> callable:
+    """creates regularization estimator for use in auto reconstructions"""
+
+    def regularization(model, model_output, mask):
+        res = (
+            l1_norm_reg(
+                model_output * (1.0 - mask), **regularization_parameters["l1_outside"]
+            )
+            + l1_norm_refractive_reg(
+                model.Sample.sample, **regularization_parameters["l1_sample"]
+            )
+            + total_variation_reg(
+                th.abs(model.Probe.probe) ** 2, **regularization_parameters["tv_probe"]
+            )
+            + total_variation_refractive_reg(
+                model.Sample.sample, **regularization_parameters["tv_sample"]
+            )
+        )
+        return res
+
+    return regularization
