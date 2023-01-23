@@ -18,7 +18,7 @@ class TransmissionPtychographyWithGaussianNoise(th.nn.Module):
         )
         self.noise_model = AdditiveGaussianNoise(**noise_parameters)
 
-    def forward(self, scan_numbers) -> Tuple():
+    def forward(self, scan_numbers) -> Tuple:
         """Estimate the measured diffraction patterns for corresponding scan numbers,
         considering noise, detector, etc.
 
