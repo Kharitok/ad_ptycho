@@ -76,7 +76,7 @@ class ProbeComplexShotToShotVariable(th.nn.Module):
                 (th.ones((number_of_positions, self.probe.shape[0])).float())
             )
         else:
-            ValueError("Either number_of_positions or modal_weights should be given")
+            raise ValueError("Either number_of_positions or modal_weights should be given")
 
     def forward(self, scan_numbers):
         """Returns probe function at scan_numbers positions"""
@@ -108,7 +108,7 @@ class ProbeDoubleRealShotToShotVariable(th.nn.Module):
                 (th.ones((number_of_positions, self.probe.shape[0])).float())
             )
         else:
-            ValueError("Either number_of_positions or modal_weights should be given")
+            raise ValueError("Either number_of_positions or modal_weights should be given")
 
     def forward(self, scan_numbers):
         """Returns probe function at scan_numbers positions"""
