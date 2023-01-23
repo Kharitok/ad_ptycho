@@ -4,6 +4,7 @@ import time
 import torch as th
 import matplotlib.pyplot as plt
 import numpy as np
+from .loss_and_regularizers import get_regularization_estimator
 
 
 class DataParallelAtributeTransparent(th.nn.DataParallel):
@@ -17,7 +18,7 @@ class DataParallelAtributeTransparent(th.nn.DataParallel):
 
 
 def save_reconstruction_results(
-    model_to_save, optimizer, reconstruction_summary, name, path
+    model_to_save, optimizer, reconstruction_summary, path, name=""
 ):
     """saves model and reconstruction data to the file"""
 
@@ -34,16 +35,40 @@ def save_reconstruction_results(
     )
 
 
+def train(
+    model,
+    optimizer,
+    data_loader,
+    epoch_num,
+    report_interval,
+    backup_interval,
+    early_stopping,
+    measured_data,
+    mismatch_estimator,
+    mask,
+    savepath,
+    regularization_params,
+):
+    """ "Perform the reconstruction for predifined number of iterations with params"""
+    reconstruction_summary = {}
+    reconstruction_summary["start_time"] = time.time()
+    reconstruction_summary["error"] = [None] * epoch_num
 
+    regularization_estimator = get_regularization_estimator(regularization_params)
 
-def train(model,noise_generator,optimizer,data_loader,epoch_num,report_interval,backup_interval,early_stopping,Measured_data,savepath):
-    """"Perform the reconstruction for predifined number of iterations with params"""
-    reconstruction_summary ={}
-    reconstruction_summary['start_time'] = time.time()
-    reconstruction_summary['error'] = []
+    def local_loss(
+        model_output,
+        noise,
+        model,
+    ):
+        loss = mismatch_estimator(
+            Approx=model_output + noise,
+            Measured=measured_batch,
+            Mask=mask,
+            mode="PNL",
+        ) + regularization_estimator(model, model_output, mask)
 
-    l1_out = lambda x : l1_norm_reg(x,)
-
+        return loss
 
     for epoch in range(epoch_num):
         # iterate through the dataloader to process next minibatch
@@ -52,52 +77,46 @@ def train(model,noise_generator,optimizer,data_loader,epoch_num,report_interval,
             optimizer.zero_grad(set_to_none=True)
 
             # estimate diffraction with forward model
-            model_output =  th.sqrt(th.sum(th.abs(model(data))**2,axis=1))
-            noise = noise_generator.get_gaussian()#
-            Measured_batch = Measured_data[data, ...]
-
+            model_output, noise = model(data)
+            measured_batch = measured_data[data, ...]
 
             # calculate loss
-        loss = (
-            Model_err(Approx=model_output+noise, Measured=Measured_batch, Mask=mask, mode="PNL")
-            +l1_norm_reg(model_output*(1.0-mask),a1=2e-2,a2=0)
-            # +l1_norm_refractive_reg(Reconstruction_model_gpu.Sample.sample,1,0)
-            # +L1(Reconstruction_model_gpu.Sample.sample,a1=0,a2=1e-1)
-            # +total_variation_reg(Reconstruction_model_gpu.Probe.probe,1e-3,0)
-        #    +total_variation_refractive_reg(Reconstruction_model_gpu.Sample.sample,1e-1,5e-8)
-        )
+            loss = local_loss(model_output,noise,model)
+            # loss = (
+            #     mismatch_estimator(
+            #         Approx=model_output + noise,
+            #         Measured=measured_batch,
+            #         Mask=mask,
+            #         mode="PNL",
+            #     )
+            #     + l1_norm_reg(model_output * (1.0 - mask), a1=2e-2, a2=0)
+            #     # +l1_norm_refractive_reg(Reconstruction_model_gpu.Sample.sample,1,0)
+            #     # +L1(Reconstruction_model_gpu.Sample.sample,a1=0,a2=1e-1)
+            #     # +total_variation_reg(Reconstruction_model_gpu.Probe.probe,1e-3,0)
+            #     #    +total_variation_refractive_reg(Reconstruction_model_gpu.Sample.sample,1e-1,5e-8)
+            # )
 
-        # backward and optimizer step
-        loss.backward()
-        optimizer.step()
+            # backward and optimizer step
+            loss.backward()
+            optimizer.step()
 
-        # save minibatch error
-        reconstruction_summary["error"].append((loss.item()))
-
+            # save minibatch error
+            reconstruction_summary["error"][epoch] = loss.item()
 
         # print current stat
         if epoch % report_interval == 0:
-            print('\r',epoch, reconstruction_summary["error"][-1], "||", end='')
-            if reconstruction_summary["error"][-1] <early_stopping:
-                print('EARLY STOPPING REACHED')
+            print("\r", epoch, reconstruction_summary["error"][-1], "||", end="")
+            if reconstruction_summary["error"][-1] < early_stopping:
+                print("EARLY STOPPING REACHED")
                 break
 
-        if (epoch + 1) % backup_interval == 0:
-            backup_name = (
-                "some_path"
-                + "Ptychography model"
-                + str(datetime.datetime.now())
-                + "_"
-                + str(np.around(reconstruction_summary["error"][-1], 5))
-                + ".pth"
-            )
-            th.save(
-                {
-                    "model": P,
-                    "optimizer": optimizer,
-                    "reconstruction_summary": reconstruction_summary,
-                },
-                backup_name,
+        if (epoch) % backup_interval == 0:
+            save_reconstruction_results(
+                model_to_save=model,
+                optimizer=optimizer,
+                reconstruction_summary=reconstruction_summary,
+                name=f'E ={np.rond(reconstruction_summary["error"][-1],3)}',
+                path=savepath,
             )
 
     reconstruction_summary["end time"] = time.time()
@@ -107,30 +126,22 @@ def train(model,noise_generator,optimizer,data_loader,epoch_num,report_interval,
     # Summarize
     print(f"RECONSTRUCTION IS FINISHED")
     print(
-        f"Total {time_of_reconstruction}|   |{time_of_reconstruction/epoch_num} per epoch"
+        f"Total {time_of_reconstruction}|   |{time_of_reconstruction/epoch_num} per"
+        " epoch"
     )
     plt.figure()
     plt.plot(reconstruction_summary["error"])
     plt.title("Reconstruction error")
     plt.show()
 
-    return (model,optimizer,reconstruction_summary)
+    # Save final results
 
-# Save final results
+    save_reconstruction_results(
+        model_to_save=model,
+        optimizer=optimizer,
+        reconstruction_summary=reconstruction_summary,
+        name=f'FIN_E ={np.rond(reconstruction_summary["error"][-1],3)}',
+        path=savepath,
+    )
 
-# save_name = (
-#     "some_path"
-#     + "Ptychography model FINAL"
-#     + str(datetime.datetime.now())
-#     + "_"
-#     + str(np.around(reconstruction_summary["error"][-1], 5))
-#     + ".pth"
-# )
-# th.save(
-#     {
-#         "model": P,
-#         "optimizer": optimizer,
-#         "reconstruction_summary": reconstruction_summary,
-#     },
-#     save_name,
-# )
+    return (model, optimizer, reconstruction_summary)
