@@ -61,7 +61,6 @@ class ShifterDefault(th.nn.Module):
 
     def __init__(self, init_shifts, borders, sample_size, mode="bilinear"):
         super().__init__()
-        print("Reporting shifter")
         self.borders = borders
         self.sample_size = sample_size
         self.init_shifts = init_shifts * (
