@@ -39,6 +39,9 @@ def load_model(filename,to_cpu = True):
     
 
 
+
+
+
 def train(
     model,
     optimizer,
@@ -129,7 +132,7 @@ def train(
         reconstruction_summary["end time"] - reconstruction_summary["start_time"]
     )
     # Summarize
-    print(f"RECONSTRUCTION IS FINISHED")
+    print(f"RECONSTRUCTION {name} IS FINISHED")
     print(
         f"Total {time_of_reconstruction}|   |{time_of_reconstruction/epoch_num} per"
         " epoch"
