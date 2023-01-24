@@ -45,3 +45,39 @@ class AdditiveGaussianNoise(th.nn.Module):
                 )
             )
         )
+
+
+
+class AdditiveGaussianNoiseVariable(th.nn.Module):
+    """Parametriezed 2D gaussian noise generator, for use in the ptychography reconstructions
+    to fit the background noise assuming shot-to-shot changing gaussian noise parameters"""
+
+    def __init__(self, detector_size, x_init, y_init, sig_x_init, sig_y_init, max_init,num_positions):
+        super().__init__()
+
+        self.init_parameters = th.tensor(
+            [x_init, y_init, sig_x_init, sig_y_init, max_init]*num_positions
+        )
+        self.gaussian_parameters = nn.Parameter(self.init_parameters.float())
+
+        Xn, Yn = th.range(0, detector_size - 1), th.range(0, detector_size - 1)
+        self.xx_, self.yy_ = Xn[None, :], Yn[:, None]
+        self.register_buffer("xx", self.xx_.data)
+        self.register_buffer("yy", self.yy_.data)
+
+    def get_gaussian(self,pos_indx):
+        """Returns estimated intensity"""
+        gaussian_params_current  = self.gaussian_parameters[...,pos_indx]
+        return gaussian_params_current[4] * th.exp(
+            -1
+            * (
+                (
+                    (self.xx - gaussian_params_current[0]) ** 2
+                    / (2 * gaussian_params_current[2] ** 2)
+                )
+                + (
+                    (self.yy - gaussian_params_current[1]) ** 2
+                    / (2 * gaussian_params_current[3] ** 2)
+                )
+            )
+        )
