@@ -34,6 +34,10 @@ def save_reconstruction_results(
         savepath,
     )
 
+def load_model(filename,to_cpu = True):
+    pass
+    
+
 
 def train(
     model,
@@ -48,6 +52,7 @@ def train(
     mask,
     savepath,
     regularization_params,
+    name=''
 ):
     """ "Perform the reconstruction for predifined number of iterations with params"""
     reconstruction_summary = {}
@@ -105,8 +110,8 @@ def train(
 
         # print current stat
         if epoch % report_interval == 0:
-            print("\r", epoch, reconstruction_summary["error"][-1], "||", end="")
-            if reconstruction_summary["error"][-1] < early_stopping:
+            print("\r", epoch, reconstruction_summary["error"][epoch], "||", end="")
+            if reconstruction_summary["error"][epoch] < early_stopping:
                 print("EARLY STOPPING REACHED")
                 break
 
@@ -115,7 +120,7 @@ def train(
                 model_to_save=model,
                 optimizer=optimizer,
                 reconstruction_summary=reconstruction_summary,
-                name=f'E ={np.rond(reconstruction_summary["error"][-1],3)}',
+                name=f'{name} E ={np.round(reconstruction_summary["error"][epoch],3)}',
                 path=savepath,
             )
 
@@ -140,7 +145,7 @@ def train(
         model_to_save=model,
         optimizer=optimizer,
         reconstruction_summary=reconstruction_summary,
-        name=f'FIN_E ={np.rond(reconstruction_summary["error"][-1],3)}',
+        name=f'{name} FINAL E ={np.round(reconstruction_summary["error"][epoch],3)}',
         path=savepath,
     )
 

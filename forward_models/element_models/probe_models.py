@@ -29,7 +29,7 @@ class ProbeComplexShotToShotConstant(th.nn.Module):
         else:
             self.probe = nn.Parameter(th.from_numpy(init_probe).cfloat())
 
-    def forward(self, scan_numbers):
+    def forward(self, scan_numbers=None):
         """Returns probe function at scan_numbers positions"""
         return self.probe[None, ...]
 
@@ -52,7 +52,7 @@ class ProbeDoubleRealShotToShotConstant(th.nn.Module):
             self.probe_real = nn.Parameter((th.from_numpy(init_probe.real).float()))
             self.probe_imag = nn.Parameter((th.from_numpy(init_probe.imag).float()))
 
-    def forward(self, scan_numbers):
+    def forward(self, scan_numbers=None):
         """Returns probe function at scan_numbers positions"""
         return th.complex(self.probe_real, self.probe_imag)[None, ...]
 
