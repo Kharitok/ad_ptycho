@@ -60,11 +60,63 @@ def total_variation_refractive_reg(
     ang_x = th.real(input_tensor)
 
     return (1 / th.numel(input_tensor)) * a1 * (
-        th.sum(th.abs(abs_x[..., :, 1:] - abs_x[..., :, :-1]))
-        + th.sum(th.abs(abs_x[..., 1:, :] - abs_x[..., :-1, :]))
+        th.sum(th.abs(th.diff(abs_x, dim=-1))) + th.sum(th.abs(th.diff(abs_x, dim=-2)))
     ) + a2 * (
-        th.sum(th.abs(ang_x[..., :, 1:] - ang_x[..., :, :-1]))
-        + th.sum(th.abs(ang_x[..., 1:, :] - ang_x[..., :-1, :]))
+        th.sum(th.abs(th.diff(ang_x, dim=-1))) + th.sum(th.abs(th.diff(ang_x, dim=-2)))
+    )
+
+
+def total_variation_refractive_isotropic_reg(
+    input_tensor: th.tensor, a1: float = 1, a2: float = 1
+) -> th.Tensor:
+    """Calculates total variantion of the input tensor in refractive form ,
+    weighted with a1 for modulus and a2 for phase"""
+    abs_x = th.imag(input_tensor)
+    ang_x = th.real(input_tensor)
+
+    return (1 / th.numel(input_tensor)) * a1 * (
+        th.sum(
+            th.sqrt(
+                th.pow(th.diff(abs_x, dim=-1)[..., :-1, :], 2)
+                + th.pow(th.diff(abs_x, dim=-2)[..., :-1], 2)
+                + 1e-10
+            )
+        )
+    ) + a2 * (
+        th.sum(
+            th.sqrt(
+                th.pow(th.diff(ang_x, dim=-1)[..., :-1, :], 2)
+                + th.pow(th.diff(ang_x, dim=-2)[..., :-1], 2)
+                + 1e-10
+            )
+        )
+    )
+
+
+def total_variation_second_refractive_isotropic_reg(
+    input_tensor: th.tensor, a1: float = 1, a2: float = 1
+) -> th.Tensor:
+    """Calculates total variantion of the input tensor in refractive form ,
+    weighted with a1 for modulus and a2 for phase"""
+    abs_x = th.imag(input_tensor)
+    ang_x = th.real(input_tensor)
+
+    return (1 / th.numel(input_tensor)) * a1 * (
+        th.sum(
+            th.sqrt(
+                th.pow(th.diff(abs_x, n=2, dim=-1)[..., :-2, :], 2)
+                + th.pow(th.diff(abs_x, n=2, dim=-2)[..., :-2], 2)
+                + 1e-10
+            )
+        )
+    ) + a2 * (
+        th.sum(
+            th.sqrt(
+                th.pow(th.diff(ang_x, n=2, dim=-1)[..., :-2, :], 2)
+                + th.pow(th.diff(ang_x, n=2, dim=-2)[..., :-2], 2)
+                + 1e-10
+            )
+        )
     )
 
 
