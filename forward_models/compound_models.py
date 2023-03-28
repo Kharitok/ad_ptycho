@@ -63,7 +63,7 @@ class TransmissionPtychographyWithVariableGaussianNoise(th.nn.Module):
         #         print("scan_numbers", scan_numbers.shape)
         return (
             th.sqrt(th.sum(th.abs(self.ptychography_model(scan_numbers)) ** 2, axis=1)),
-            self.noise_model.get_gaussian(),
+            self.noise_model.get_gaussian(scan_numbers),
         )
 
     def __getattr__(self, name):
