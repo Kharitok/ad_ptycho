@@ -101,7 +101,7 @@ class TiltSmallAngle (th.nn.Module):
         transfer_function =  th.exp(
             1j * self.k * (self.xx[None,:,] * th.cos(tilt.thetas[:,None,None])+ self.yy[None,:,] * th.sin(self.thetas[:,None,None])) * th.tan(self.alphas)[:,None,None]
         )
-        return X.unsqueeze(0).expand(self.num_tilts,-1,-1,-1)*transfer_function[:,None,:,:]
+        return X.expand(self.num_tilts,-1,-1,-1)*transfer_function[:,None,:,:]
     
 
         
@@ -116,12 +116,11 @@ class SingleShotPtychographyModel(th.nn.Module):
         self,
         probe_type,
         sample_type,
-        shifter_type,
-        propagator_type,
         probe_params,
         sample_params,
-        shifter_params,
-        propagator_params,
+        propagator_params_grating_sample,
+        propagator_params_sample_detector,
+        tilt_params,
     ):
         """probe_type one of 'complex_shot_to_shot_constant','double_real_shot_to_shot_constant',
         'Probe_complex_shot_to_shot_variable','Probe_double_real_shot_to_shot_variable'.
@@ -173,7 +172,7 @@ class SingleShotPtychographyModel(th.nn.Module):
         self.Propagator_sample_detector = PropagatorFresnelSingleTransformFLuxPreserving(**propagator_params_sample_detector)
         self.Tilt = TiltSmallAngle(**tilt_params) 
 
-    def forward(self, scan_numbers):
+    def forward(self, ):
         """Estimate the measured diffraction patterns for corresponding scan numbers"""
         #         print("Sample", self.Sample().shape)
         #         print("Probe", self.Probe(scan_numbers).shape)
