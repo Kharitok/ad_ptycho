@@ -99,13 +99,12 @@ class TiltSmallAngle (th.nn.Module):
     def forward(self, X):
         """Tilts the incoming wavefield of shape [num_fields,H,W]"""
         transfer_function =  th.exp(
-            1j * self.k * (self.xx[None,:,] * th.cos(tilt.thetas[:,None,None])+ self.yy[None,:,] * th.sin(self.thetas[:,None,None])) * th.tan(self.alphas)[:,None,None]
+            1j * self.k * (self.xx[None,:,] * th.cos(self.thetas[:,None,None])+ self.yy[None,:,] * th.sin(self.thetas[:,None,None])) * th.tan(self.alphas)[:,None,None]
         )
         return X.expand(self.num_tilts,-1,-1,-1)*transfer_function[:,None,:,:]
     
 
         
-
 class SingleShotPtychographyModel(th.nn.Module):
     """Describes single-shot diffraction-grating-based ptychography experiment.
     Returns [modes_num,probe_y,probe_x] tensor,
@@ -180,7 +179,6 @@ class SingleShotPtychographyModel(th.nn.Module):
         modulated_probe_diffraction =self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Probe()).sum(axis=0)) *self.Sample()[None,...] )
         probe_diffraction = self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Probe()).sum(axis=0))  )
         return (modulated_probe_diffraction,probe_diffraction)
-
 
 # class SingleShotPtychographyModel(th.nn.Module):
 #     """Describes single-shot diffraction-grating-based ptychography experiment.
