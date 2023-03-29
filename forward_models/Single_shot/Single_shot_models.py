@@ -42,10 +42,10 @@ class PropagatorRayleighSommerfeldTF_constant (th.nn.Module):
 
         lm = wavelength
         fx,fy = freq_grid(pixel_size=pixel_size,pixel_num=pixel_num)
-        fx.cdouble()
-        fy.cdouble()
-        H_ = th.exp((2j*th.pi*z_gs/lm)*th.sqrt(1- (lm*fx_ )**2 - (lm*fy_)**2)) #th.exp(2j*th.pi*z*th.sqrt(1- (lm*fx )**2 - (lm*fy)**2)/lm)
-        H_inverse_ = th.exp((-1*2j*th.pi*z_gs/lm)*th.sqrt(1- (lm*fx_ )**2 - (lm*fy_)**2))
+        fx =fx.cdouble()
+        fy =fy.cdouble()
+        H_ = th.exp((2j*th.pi*z/lm)*th.sqrt(1- (lm*fx )**2 - (lm*fy)**2)) #th.exp(2j*th.pi*z*th.sqrt(1- (lm*fx )**2 - (lm*fy)**2)/lm)
+        H_inverse_ = th.exp((-1*2j*th.pi*z/lm)*th.sqrt(1- (lm*fx )**2 - (lm*fy)**2))
         self.register_buffer("H", H_.cfloat())
         self.register_buffer("H_inverse", H_inverse_.cfloat())
 
@@ -57,7 +57,6 @@ class PropagatorRayleighSommerfeldTF_constant (th.nn.Module):
     def inverse(self, X):
         """Performs inverse propagation"""
         return th_iff(th_ff(X)*self.H_inverse)
-
 
 
 
@@ -179,12 +178,9 @@ class SingleShotPtychographyModel(th.nn.Module):
         #         print("Sample", self.Sample().shape)
         #         print("Probe", self.Probe(scan_numbers).shape)
         #         print("scan_numbers", scan_numbers.shape)
-        modulated_probe_diffraction =self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Probe())) *self.Sample()[None,...] )
-        probe_diffraction = 
-        return self.Propagator_sample_detector(
-            self.Shifter(self.Sample(), scan_numbers)[:, None, :, :]
-            * self.Probe(scan_numbers)
-        )
+        modulated_probe_diffraction =self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Probe()).sum(axis=0)) *self.Sample()[None,...] )
+        probe_diffraction = self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Probe()).sum(axis=0))  )
+        return (modulated_probe_diffraction,probe_diffraction)
 
 
 # class SingleShotPtychographyModel(th.nn.Module):
