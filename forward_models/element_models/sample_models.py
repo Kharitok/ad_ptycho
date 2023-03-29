@@ -73,7 +73,7 @@ class SampleRefractive(th.nn.Module):
         return th.exp(1j * self.sample)
 
     def get_transmission_and_pase(self):
-        """Returnstransmission and phase of the sample"""
+        """Returns transmission and phase of the sample"""
         trans = th.exp(-1 * th.imag(self.sample))
         phase = th.real(self.sample)
         return (trans, phase)
