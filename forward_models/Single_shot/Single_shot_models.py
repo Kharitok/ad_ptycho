@@ -19,53 +19,43 @@ from ..element_models.propagator_models import (
     grid,
     th_ff,
     th_iff,
+    freq_grid,
 )
 
 
-class PropagatorRayleighSommerfeldTF (th.nn.Module):
+class PropagatorRayleighSommerfeldTF_constant (th.nn.Module):
     """
     Rayleigh–Sommerfeld transfer function responce propagation  
     better for shorter  distances
     Δx >= λz/L
     """
     pass
-    # def __init__(
-    #     self,
-    #     pixel_size,
-    #     pixel_num,
-    #     wavelength,
-    #     z,
-    # ):
-    #     super().__init__()
+    def __init__(
+        self,
+        pixel_size,
+        pixel_num,
+        wavelength,
+        z,
+    ):
+        super().__init__()
 
-    #     lm = wavelength
-    #     k = 2 * th.pi / lm
+        lm = wavelength
+        fx,fy = freq_grid(pixel_size=pixel_size,pixel_num=pixel_num)
+        fx.cdouble()
+        fy.cdouble()
+        H_ = th.exp((2j*th.pi*z_gs/lm)*th.sqrt(1- (lm*fx_ )**2 - (lm*fy_)**2)) #th.exp(2j*th.pi*z*th.sqrt(1- (lm*fx )**2 - (lm*fy)**2)/lm)
+        H_inverse_ = th.exp((-1*2j*th.pi*z_gs/lm)*th.sqrt(1- (lm*fx_ )**2 - (lm*fy_)**2))
+        self.register_buffer("H", H_.cfloat())
+        self.register_buffer("H_inverse", H_inverse_.cfloat())
 
-    #     x1, y1 = grid(pixel_size, pixel_num)
 
-    #     x2, y2 = fourrier_scaled_grid(lm, z, pixel_size, pixel_num)
+    def forward(self, X):
+        """Performs forward propagation"""
+        return th_iff(th_ff(X)*self.H)
 
-    #     mul1 = th.exp((1j * k / (2 * z)) * (x2**2 + y2**2))
-    #     mul2 = th.exp((1j * k / (2 * z)) * (x1**2 + y1**2))
-
-    #     mul1_inv = th.exp((1j * k / (2 * (-z)) * (x1**2 + y1**2)))
-    #     mul2_inv = th.exp((1j * k / (2 * (-z)) * (x2**2 + y2**2)))
-
-    #     self.register_buffer("mul1", mul1.cfloat())
-    #     self.register_buffer("mul2", mul2.cfloat())
-
-    #     self.register_buffer("mul1_inv", mul1_inv.cfloat())
-    #     self.register_buffer("mul2_inv", mul2_inv.cfloat())
-
-    #     self.num = pixel_num
-
-    # def forward(self, X):
-    #     """Performs forward propagation"""
-    #     return self.mul1 * th_ff(X * self.mul2) / self.num
-
-    # def inverse(self, X):
-    #     """Performs inverse propagation"""
-    #     return self.mul1_inv * th_iff(X * self.mul2_inv) * self.num
+    def inverse(self, X):
+        """Performs inverse propagation"""
+        return th_iff(th_ff(X)*self.H_inverse)
 
 
 
