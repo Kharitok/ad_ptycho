@@ -1,8 +1,6 @@
 import torch as th
 import torch.nn as nn
 import numpy as np
-import torch.fft as th_fft
-
 
 from ..element_models.probe_models import (
     ProbeComplexShotToShotConstant,
@@ -25,53 +23,6 @@ from ..element_models.propagator_models import (
     freq_grid,
     PropagatorFresnelSingleTransformFLuxPreserving,
 )
-
-
-
-
-class naive_Upsampler(th.nn.Module):
-    """Upsamples probe or sample to match the propagation conditions"""
-    def __init__(self):
-        super().__init__()
-        self.upsampler = th.nn.Upsample(scale_factor=(2,2), mode='bicubic',)
-        self.downsampler = th.nn.Upsample(scale_factor=(0.5,0.5), mode='bicubic',)
-
-    def forward(self, X):
-        """Performs forward propagation"""
-        return th.view_as_complex(th.permute(self.upsampler(th.permute(th.view_as_real(X),(2,0,1)).unsqueeze(0)).squeeze(),(1,2,0)).contiguous())
-
-    def inverse(self, X):
-        """Performs inverse propagation"""
-        return th.view_as_complex(th.permute(self.downsampler(th.permute(th.view_as_real(X),(2,0,1)).unsqueeze(0)).squeeze(),(1,2,0)).contiguous())
-
-
-def th_ff_sampling(field):
-    """FFT routine for centered data"""
-    return th_fft.fftshift(
-        th_fft.fft2(th_fft.ifftshift(field, dim=(-1, -2)), norm="ortho"), dim=(-1, -2)
-    )
-
-
-def th_iff_sampling(field):
-    """IFFT routine for centered data"""
-    return th_fft.fftshift(
-        th_fft.ifft2(th_fft.ifftshift(field, dim=(-1, -2)), norm="ortho"), dim=(-1, -2)
-    )
-   
-
-class Bulk_fft_upsampler(th.nn.Module):
-    """Upsamples probe or sample to match the propagation conditions"""
-    def __init__(self):
-        super().__init__()
-        
-
-    def forward(self, X):
-        """Performs forward propagation"""
-        return  th_iff(th.nn.functional.pad(th_ff_sampling(X),(512,512,512,512)))*4096
-
-    def inverse(self, X):
-        """Performs inverse propagation"""
-        return th_iff_sampling(th_ff_sampling(X)[512:-512,512:-512])
 
 
 class PropagatorRayleighSommerfeldTF_constant (th.nn.Module):
@@ -249,165 +200,6 @@ class SingleShotPtychographyModel(th.nn.Module):
         modulated_probe_diffraction =self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Support(self.Probe())).sum(axis=0)) *self.Sample()[None,...] )
         probe_diffraction = self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Support(self.Probe())).sum(axis=0))  )
         return (modulated_probe_diffraction,probe_diffraction)
-    
-
-
-class SingleShotPtychographyModel_upsampled(th.nn.Module):
-    """Describes single-shot diffraction-grating-based ptychography experiment.
-    Returns [modes_num,probe_y,probe_x] tensor,
-    which later can be treated depending on the coherent and other properties of the experiment
-    """
-
-    def __init__(
-        self,
-        probe_type,
-        sample_type,
-        probe_params,
-        sample_params,
-        propagator_params_grating_sample,
-        propagator_params_sample_detector,
-        tilt_params,
-        support
-    ):
-        """probe_type one of 'complex_shot_to_shot_constant','double_real_shot_to_shot_constant',
-        'Probe_complex_shot_to_shot_variable','Probe_double_real_shot_to_shot_variable'.
-
-        sample_type one of 'complex_TF','double_real_TF','refractive','thickness'.
-
-        shifter_type one of 'default','elastic','rotational','rotational_elastic'.
-
-        propagator_type one of 'Fraunhofer','Fresnel_single_transform'.
-
-        probe_params: (init_probe, number_of_positions=None, modal_weights=None)
-        last two parameters for variable probe case
-
-        sample_params: (sample_size=None, init_sample=None) one must be not None
-
-        shifter_params: (init_shifts,init_rotations,borders,sample_size,
-        max_correction,max_rotation_correction,)
-        depending on the shifter type
-
-        propagator_params: (pixel_size,pixel_num,wavelength,z,) depending on the propagator type
-
-        """
-        super().__init__()
-
-        if probe_type == "Probe_complex_shot_to_shot_constant":
-            self.Probe = ProbeComplexShotToShotConstant(**probe_params)
-        elif probe_type == "Probe_double_real_shot_to_shot_constant":
-            self.Probe = ProbeDoubleRealShotToShotConstant(**probe_params)
-        elif probe_type == "Probe_complex_shot_to_shot_variable":
-            self.Probe = ProbeComplexShotToShotVariable(**probe_params)
-        elif probe_type == "Probe_double_real_shot_to_shot_variable":
-            self.Probe = ProbeDoubleRealShotToShotVariable(**probe_params)
-        else:
-            raise ValueError("Unknown probe_type")
-
-        if sample_type == "complex_TF":
-            self.Sample = SampleComplex(**sample_params)
-        elif sample_type == "double_real_TF":
-            self.Sample = SampleDoubleReal(**sample_params)
-        elif sample_type == "refractive":
-            self.Sample = SampleRefractive(**sample_params)
-        elif sample_type == "thickness":
-            self.Sample = SampleVariableThickness(**sample_params)
-        else:
-            raise ValueError("Unknown sample_type")
-
-
-        self.Propagator_grating_sample = PropagatorRayleighSommerfeldTF_constant(**propagator_params_grating_sample)
-        self.Propagator_sample_detector = PropagatorFresnelSingleTransformFLuxPreserving(**propagator_params_sample_detector)
-        self.Tilt = TiltSmallAngle(**tilt_params) 
-        self.Support  =Support(support)
-        self.Upsampler = Bulk_fft_upsampler()
-
-    def forward(self, ):
-        """Estimate the measured diffraction patterns for corresponding scan numbers"""
-        #         print("Sample", self.Sample().shape)
-        #         print("Probe", self.Probe(scan_numbers).shape)
-        #         print("scan_numbers", scan_numbers.shape)
-        modulated_probe_diffraction =self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Upsampler(self.Support(self.Probe()))).sum(axis=0)) *self.Upsampler(self.Sample())[None,...] )
-        probe_diffraction = self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Upsampler(self.Support(self.Probe()))).sum(axis=0))  )
-        return (modulated_probe_diffraction,probe_diffraction)
-
-
-class SingleShotPtychographyModel_upsampled_changed_order(th.nn.Module):
-    """Describes single-shot diffraction-grating-based ptychography experiment.
-    Returns [modes_num,probe_y,probe_x] tensor,
-    which later can be treated depending on the coherent and other properties of the experiment
-    """
-
-    def __init__(
-        self,
-        probe_type,
-        sample_type,
-        probe_params,
-        sample_params,
-        propagator_params_grating_sample,
-        propagator_params_sample_detector,
-        tilt_params,
-        support
-    ):
-        """probe_type one of 'complex_shot_to_shot_constant','double_real_shot_to_shot_constant',
-        'Probe_complex_shot_to_shot_variable','Probe_double_real_shot_to_shot_variable'.
-
-        sample_type one of 'complex_TF','double_real_TF','refractive','thickness'.
-
-        shifter_type one of 'default','elastic','rotational','rotational_elastic'.
-
-        propagator_type one of 'Fraunhofer','Fresnel_single_transform'.
-
-        probe_params: (init_probe, number_of_positions=None, modal_weights=None)
-        last two parameters for variable probe case
-
-        sample_params: (sample_size=None, init_sample=None) one must be not None
-
-        shifter_params: (init_shifts,init_rotations,borders,sample_size,
-        max_correction,max_rotation_correction,)
-        depending on the shifter type
-
-        propagator_params: (pixel_size,pixel_num,wavelength,z,) depending on the propagator type
-
-        """
-        super().__init__()
-
-        if probe_type == "Probe_complex_shot_to_shot_constant":
-            self.Probe = ProbeComplexShotToShotConstant(**probe_params)
-        elif probe_type == "Probe_double_real_shot_to_shot_constant":
-            self.Probe = ProbeDoubleRealShotToShotConstant(**probe_params)
-        elif probe_type == "Probe_complex_shot_to_shot_variable":
-            self.Probe = ProbeComplexShotToShotVariable(**probe_params)
-        elif probe_type == "Probe_double_real_shot_to_shot_variable":
-            self.Probe = ProbeDoubleRealShotToShotVariable(**probe_params)
-        else:
-            raise ValueError("Unknown probe_type")
-
-        if sample_type == "complex_TF":
-            self.Sample = SampleComplex(**sample_params)
-        elif sample_type == "double_real_TF":
-            self.Sample = SampleDoubleReal(**sample_params)
-        elif sample_type == "refractive":
-            self.Sample = SampleRefractive(**sample_params)
-        elif sample_type == "thickness":
-            self.Sample = SampleVariableThickness(**sample_params)
-        else:
-            raise ValueError("Unknown sample_type")
-
-
-        self.Propagator_grating_sample = PropagatorRayleighSommerfeldTF_constant(**propagator_params_grating_sample)
-        self.Propagator_sample_detector = PropagatorFresnelSingleTransformFLuxPreserving(**propagator_params_sample_detector)
-        self.Tilt = TiltSmallAngle(**tilt_params) 
-        self.Support  =Support(support)
-        self.Upsampler = Bulk_fft_upsampler()
-
-    def forward(self, ):
-        """Estimate the measured diffraction patterns for corresponding scan numbers"""
-        #         print("Sample", self.Sample().shape)
-        #         print("Probe", self.Probe(scan_numbers).shape)
-        #         print("scan_numbers", scan_numbers.shape)
-        modulated_probe_diffraction =self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Upsampler(self.Support(self.Probe())))) *self.Upsampler(self.Sample())[None,...] ).sum(axis=0)
-        probe_diffraction = self.Propagator_sample_detector( self.Propagator_grating_sample(self.Tilt(self.Upsampler(self.Support(self.Probe()))).sum(axis=0))  )
-        return (modulated_probe_diffraction,probe_diffraction)
 
 
 def caclulate_alphas_thetas(highest_diffraction_order,pix_size,pix_num,z_gd):
@@ -425,6 +217,7 @@ def caclulate_alphas_thetas(highest_diffraction_order,pix_size,pix_num,z_gd):
     rotation_angle_degree = np.degrees(rotation_angle)
     shift_angle = np.arctan(distance_shift/z_gd)
     return(shift_angle.ravel(),np.nan_to_num(rotation_angle).ravel(),)
+
 
 
 
