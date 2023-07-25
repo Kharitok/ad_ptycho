@@ -366,6 +366,7 @@ class ShifterRotationalElastic(ShifterRotational):
 
 
 
+
 class ShifterDefault_Fourrier(th.nn.Module):
     """Scans the sample using differentiable fourrier shoift, performs position correction by optimizing xand y shifts
     init_shifts are assumed to be (N,2) array or tensor (N_pos,[x,y]) in pixels +y = |^, +x = <-
@@ -375,7 +376,7 @@ class ShifterDefault_Fourrier(th.nn.Module):
         super().__init__()
         self.borders = borders
 #         self.sample_size = sample_size
-        self.init_shifts = init_shifts #in pixels
+        self.init_shifts = th.flip(init_shifts*-1,dims = [1]) #in pixels
 
         self.register_buffer("shifts_initial", self.init_shifts.data)  # .cuda()
         freq_x, freq_y = th.meshgrid(th.fft.fftfreq(f_signal.shape[0], 1), th.fft.fftfreq(f_signal.shape[1], 1),indexing = 'ij')
@@ -408,3 +409,4 @@ class ShifterDefault_Fourrier(th.nn.Module):
         return sample[
             :, self.borders[0] : self.borders[1], self.borders[2] : self.borders[3]
         ]
+
