@@ -363,3 +363,48 @@ class ShifterRotationalElastic(ShifterRotational):
             "initial_rotations": init_rot,
             "corrected_rotations": corrected_rot,
         }
+
+
+
+class ShifterDefault_Fourrier(th.nn.Module):
+    """Scans the sample using differentiable fourrier shoift, performs position correction by optimizing xand y shifts
+    init_shifts are assumed to be (N,2) array or tensor (N_pos,[x,y]) in pixels +y = |^, +x = <-
+    """
+
+    def __init__(self, init_shifts, borders, sample_size,):
+        super().__init__()
+        self.borders = borders
+#         self.sample_size = sample_size
+        self.init_shifts = init_shifts #in pixels
+
+        self.register_buffer("shifts_initial", self.init_shifts.data)  # .cuda()
+        freq_x, freq_y = th.meshgrid(th.fft.fftfreq(f_signal.shape[0], 1), th.fft.fftfreq(f_signal.shape[1], 1),indexing = 'ij')
+        self.register_buffer("freqs_x", freq_x.data)
+        self.register_buffer("freqs_y", freq_y)
+        
+        self.shifts_correction = nn.Parameter(
+            th.zeros((len(self.init_shifts), 2), dtype=th.float32)
+        )
+
+        # t_shift = th.tensor(((100,0),(0,0),(0,100)),dtype = th.float)
+        # t_shift.requires_grad= True
+        # f_signal
+
+        # f_signal = th.fft.fft2(t_s,norm = 'ortho')
+        # freq_x, freq_y = th.meshgrid(th.fft.fftfreq(f_signal.shape[0], 1), th.fft.fftfreq(f_signal.shape[1], 1),indexing = 'ij')
+        # shift_op = th.exp(-2j*th.pi * (freq_x[None,...]*t_shift[:,0][...,None,None]+freq_y[None,...]*t_shift[:,1][...,None,None]))
+        # shifted_f = shift_op*f_signal
+        # shifted_signal = th.fft.ifft2(shifted_f,norm = 'ortho')
+
+    def forward(self, sample, scan_numbers):
+        """get sample function at coordinates corresponding to scan_numbers"""
+        shifts = self.shifts_correction[scan_numbers]+self.shifts_initial[scan_numbers]
+
+        
+        sample = th.fft.fft2(sample,norm = 'ortho')
+        sample = sample*th.exp(-2j*th.pi * (self.freqs_x[None,...]*shifts[:,0][...,None,None]+self.freqs_y[None,...]*shifts[:,1][...,None,None]))
+        sample = th.fft.ifft2(sample,norm = 'ortho')
+        
+        return sample[
+            :, self.borders[0] : self.borders[1], self.borders[2] : self.borders[3]
+        ]

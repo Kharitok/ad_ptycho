@@ -33,6 +33,7 @@ from .element_models.shifter_models import (
     ShifterElastic,
     ShifterRotational,
     ShifterRotationalElastic,
+    ShifterDefault_Fourrier,
 )
 
 
