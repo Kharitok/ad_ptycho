@@ -379,7 +379,7 @@ class ShifterDefault_Fourrier(th.nn.Module):
         self.init_shifts = th.flip(init_shifts*-1,dims = [1]) #in pixels
 
         self.register_buffer("shifts_initial", self.init_shifts.data)  # .cuda()
-        freq_x, freq_y = th.meshgrid(th.fft.fftfreq(f_signal.shape[0], 1), th.fft.fftfreq(f_signal.shape[1], 1),indexing = 'ij')
+        freq_x, freq_y = th.meshgrid(th.fft.fftfreq(sample_size, 1), th.fft.fftfreq(sample_size, 1),indexing = 'ij')
         self.register_buffer("freqs_x", freq_x.data)
         self.register_buffer("freqs_y", freq_y)
         
