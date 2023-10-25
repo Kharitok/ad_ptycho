@@ -22,6 +22,7 @@ from .element_models.sample_models import (
     SampleDoubleReal,
     SampleRefractive,
     SampleVariableThickness,
+    SampleRefractiveConstrained,
 )
 
 from .element_models.propagator_models import (
@@ -110,6 +111,8 @@ class PtychographyModelTransmission(th.nn.Module):
             self.Sample = SampleRefractive(**sample_params)
         elif sample_type == "thickness":
             self.Sample = SampleVariableThickness(**sample_params)
+        elif sample_type == 'refractive_constrained':
+            self.Sample = SampleRefractiveConstrained(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
 
@@ -210,6 +213,8 @@ class PtychographyModelTransmissionSupported(th.nn.Module):
             self.Sample = SampleRefractive(**sample_params)
         elif sample_type == "thickness":
             self.Sample = SampleVariableThickness(**sample_params)
+        elif sample_type == 'refractive_constrained':
+            self.Sample = SampleRefractiveConstrained(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
 

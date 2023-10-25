@@ -77,6 +77,30 @@ class SampleRefractive(th.nn.Module):
         trans = th.exp(-1 * th.imag(self.sample))
         phase = th.real(self.sample)
         return (trans, phase)
+    
+
+class SampleRefractiveConstrained(th.nn.Module):
+    """Refractive sample model implemented as complex tensor"""
+
+    def __init__(self, sample_size=None, init_sample=None):
+        super().__init__()
+
+        if (sample_size is None) and (init_sample is None):
+            raise ValueError("Either sample_size or init_sample should be given")
+        elif init_sample is not None:
+            self.sample = nn.Parameter(th.from_numpy(init_sample).cfloat())
+        else:
+            self.sample = nn.Parameter(th.zeros(sample_size, dtype=th.complex64))
+
+    def forward(self):
+        """Returns transfer function of the sample"""
+        return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
+
+    def get_transmission_and_pase(self):
+        """Returns transmission and phase of the sample"""
+        trans = th.exp(-1 * th.exp(th.imag(self.sample)))
+        phase = th.real(self.sample)
+        return (trans, phase)
 
 
 class SampleVariableThickness(th.nn.Module):
