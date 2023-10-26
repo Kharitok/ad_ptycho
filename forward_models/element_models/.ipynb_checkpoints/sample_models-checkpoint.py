@@ -4,6 +4,7 @@ Sample models for AD-based ptychography
 # import torch.nn.functional as F
 import torch.nn as nn
 import torch as th
+import numpy as np
 
 # import torch.fft as th_fft
 # from torch.utils.data import Dataset, DataLoader
@@ -74,8 +75,35 @@ class SampleRefractive(th.nn.Module):
 
     def get_transmission_and_pase(self):
         """Returns transmission and phase of the sample"""
-        trans = th.exp(-1 * th.imag(self.sample))
-        phase = th.real(self.sample)
+        trans = th.exp(-1 * th.imag(self.sample.detach().cpu()))
+        phase = th.real(self.sample.detach().cpu())
+        return (trans, phase)
+    
+
+class SampleRefractiveConstrained(th.nn.Module):
+    """Refractive sample model implemented as complex tensor"""
+
+    def __init__(self, sample_size=None, init_sample=None):
+        super().__init__()
+
+        if (sample_size is None) and (init_sample is None):
+            raise ValueError("Either sample_size or init_sample should be given")
+        elif init_sample is not None:
+            trans = np.abs(init_sample)
+            imag = np.log(np.log(trans)*-1)
+            phase = np.angle(init_sample)# wrapping is here but so far we don't care
+            self.sample = nn.Parameter(th.from_numpy(phase + 1j*imag).cfloat())
+        else:
+            self.sample = nn.Parameter(th.zeros(sample_size, dtype=th.complex64)-5j)# for having ~ 1.0 sample
+
+    def forward(self):
+        """Returns transfer function of the sample"""
+        return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
+
+    def get_transmission_and_pase(self):
+        """Returns transmission and phase of the sample"""
+        trans = th.exp(-1 * th.exp(th.imag(self.sample.detach().cpu())))
+        phase = th.real(self.sample.detach().cpu())
         return (trans, phase)
 
 
