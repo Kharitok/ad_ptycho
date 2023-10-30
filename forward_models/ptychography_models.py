@@ -14,7 +14,8 @@ from .element_models.probe_models import (
     ProbeDoubleRealShotToShotConstant,
     ProbeComplexShotToShotVariable,
     ProbeDoubleRealShotToShotVariable,
-    ProbeComplexShotToShotVariable_coherent
+    ProbeComplexShotToShotVariable_coherent,
+    ProbeComplexShotToShotVariable_coherent_incoherent
 )
 
 from .element_models.sample_models import (
@@ -202,6 +203,8 @@ class PtychographyModelTransmissionSupported(th.nn.Module):
             self.Probe = ProbeDoubleRealShotToShotVariable(**probe_params)
         elif probe_type =='ProbeComplexShotToShotVariable_coherent':
             self.Probe = ProbeComplexShotToShotVariable_coherent(**probe_params)
+        elif probe_type == 'ProbeComplexShotToShotVariable_coherent_incoherent':
+            self.Probe = ProbeComplexShotToShotVariable_coherent_incoherent(**probe_params)
         else:
             raise ValueError("Unknown probe_type")
 

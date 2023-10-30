@@ -113,7 +113,7 @@ class ProbeComplexShotToShotVariable_coherent_incoherent(ProbeComplexShotToShotV
     """Orthogonal probe relaxation
     """
 
-    def __init__(self, init_probe, number_of_positions=None, modal_weights_coherent=None, modal_weights_incoherent=None,  ):
+    def __init__(self, init_probe, number_of_positions=None,decoher_modes=None, modal_weights_coherent=None, modal_weights_incoherent=None,  ):
         super().__init__()
         raise ValueError("NOT IMPLEMENTED")
         if len(init_probe.shape) == 2:
@@ -123,16 +123,16 @@ class ProbeComplexShotToShotVariable_coherent_incoherent(ProbeComplexShotToShotV
 
         if modal_weights is not None:
             self.modal_weights = nn.Parameter(th.from_numpy(modal_weights).float())
-        elif number_of_positions is not None:
+        elif (number_of_positions is not None) and (decoher_modes is not None):
             self.modal_weights = nn.Parameter(
-                (th.ones((number_of_positions, self.probe.shape[0])).float())
+                (th.ones((number_of_positions, decoher_modes,self.probe.shape[0])).float())
             )
         else:
             raise ValueError("Either number_of_positions or modal_weights should be given")
 
     def forward(self, scan_numbers):
         """Returns probe function at scan_numbers positions"""
-        return (self.probe[None, :, :] * self.modal_weights[scan_numbers, :, None, None]).sum(axis=1)[:,None,:,:]   
+        return (modal_weights[...,None,None]*self.probe[None,None, :, :]).sum(axis=2)  #(self.probe[None, :, :] * self.modal_weights[scan_numbers, :, None, None]).sum(axis=1)[:,None,:,:]   
     
 
 
