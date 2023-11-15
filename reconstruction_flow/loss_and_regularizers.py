@@ -153,7 +153,18 @@ def generalized_total_variation_second_refractive_isotropic_reg(
 
 
 class LossEstimator:
-    """Class containing different loss functions to be used during the optimization"""
+    """Class containing different loss functions to be used during the optimization
+    consult with [1] Noise models for low counting rate coherent diffraction imaging 
+    https://doi.org/10.1364/OE.20.025914
+    [2] Maximum-likelihood refinement for coherent diffractive imaging
+    [3] Maximum-likelihood estimation in ptychography in the presence of Poisson-Gaussian noise statistics
+
+    for LSQ it's better to use sqrt(I) rather than I
+    For PNL  I
+    Counting is copied from [1] and expects I 
+    Pu_Ga is copied from [3] with sigma_masked being variance of the readout noise estimated from darks apriory and  masked accourdingly
+
+    """
 
     def __init__(self, Mask=None):
         if Mask is not None:
@@ -166,56 +177,33 @@ class LossEstimator:
         self.PNL_usual = th.nn.PoissonNLLLoss(log_input=False)
         self.PNL_log = th.nn.PoissonNLLLoss(log_input=True)
 
-    def __call__(self, Approx, Measured, mode="LSQ", Mask=None):
-        if (self.Mask is None) and (Mask is None):
-            if mode == "LSQ":
-                return self.LSQ(Approx, Measured)
-            elif mode == "LSQ_rel":
-                return (
-                    ((Measured - Approx) ** 2).sum(dim=[1, 2])
-                    / ((Measured**2).sum(dim=[1, 2]))
-                ).mean()
-            elif mode == "PNL":
-                return self.PNL_usual(Approx**2, Measured**2)
-            elif mode == "PNL_log":
-                return self.PNL_log(Approx**2, Measured**2)
-            else:
-                raise ValueError("Unknown mode")
-
-        elif not (Mask is None):
+    def __call__(self, Approx, Measured, mode="LSQ", Mask=None,sigma_masked=None):
+        if not (Mask is None):
             Approx = Approx * Mask
             Measured = Measured * Mask
-
-            if mode == "LSQ":
-                return self.LSQ(Approx, Measured)
-            elif mode == "LSQ_rel":
-                return (
-                    ((Measured - Approx) ** 2).sum(dim=[1, 2])
-                    / ((Measured**2).sum(dim=[1, 2]))
-                ).mean()
-            elif mode == "PNL":
-                return self.PNL_usual(Approx**2, Measured**2)
-            elif mode == "PNL_log":
-                return self.PNL_log(Approx**2, Measured**2)
-            else:
-                raise ValueError("Unknown mode")
-        else:
+        elif not(self.mask is None):
             Approx = Approx * self.Mask
             Measured = Measured * self.Mask
 
-            if mode == "LSQ":
-                return self.LSQ(Approx, Measured)
-            elif mode == "LSQ_rel":
-                return (
-                    ((Measured - Approx) ** 2).sum(dim=[1, 2])
-                    / ((Measured**2).sum(dim=[1, 2]))
-                ).mean()
-            elif mode == "PNL":
-                return self.PNL_usual(Approx**2, Measured**2)
-            elif mode == "PNL_log":
-                return self.PNL_log(Approx**2, Measured**2)
-            else:
-                raise ValueError("Unknown mode")
+        if mode == "LSQ":
+            return self.LSQ(Approx, Measured)
+        elif mode == "LSQ_rel":
+            return (
+                ((Measured - Approx) ** 2).sum(dim=[1, 2])
+                / ((Measured**2).sum(dim=[1, 2]))
+            ).mean()
+        elif mode == "PNL":
+            return self.PNL_usual(Approx, Measured)
+        elif mode == "PNL_log":
+            return self.PNL_log(Approx, Measured)
+        elif mode == "Counting":
+            return (((Measured-Approx)/(th.sqrt(Measured)+1e-7))**2).mean()
+        elif mode == "Pu_Ga":
+            return (th.log(Approx+sigma_masked+1e-7)+ ((Measured-Approx)**2)/(Approx+sigma_masked+1e-7)).mean()
+        else:
+            raise ValueError("Unknown mode")
+
+
 
 
             +l1_norm_reg(model_output*(1.0-mask),a1=2e-2,a2=0)
