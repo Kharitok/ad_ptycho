@@ -162,7 +162,7 @@ class LossEstimator:
     for LSQ it's better to use sqrt(I) rather than I [1]
     For PNL  I [2]
     Counting is copied from [1] and expects I 
-    Pu_Ga is copied from [3] with sigma_masked being variance of the readout noise estimated from darks apriory and  masked accourdingly
+    Pu_Ga and  Pu_Ga_without_sigma are  copied from [3] with sigma_masked being variance of the readout noise estimated from darks apriory and  masked accourdingly
 
     """
 
@@ -181,7 +181,7 @@ class LossEstimator:
         if not (Mask is None):
             Approx = Approx * Mask
             Measured = Measured * Mask
-        elif not(self.mask is None):
+        elif not(self.Mask is None):
             Approx = Approx * self.Mask
             Measured = Measured * self.Mask
 
@@ -197,6 +197,8 @@ class LossEstimator:
         elif mode == "PNL_log":
             return self.PNL_log(Approx, Measured)
         elif mode == "Counting":
+            return (((Measured-Approx)/(Measured+1e-7))**2).mean()
+        elif mode == "Pu_Ga_without_sigma":
             return (((Measured-Approx)/(th.sqrt(Measured)+1e-7))**2).mean()
         elif mode == "Pu_Ga":
             return (th.log(Approx+sigma_masked+1e-7)+ ((Measured-Approx)**2)/(Approx+sigma_masked+1e-7)).mean()
