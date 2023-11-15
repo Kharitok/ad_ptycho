@@ -159,8 +159,8 @@ class LossEstimator:
     [2] Maximum-likelihood refinement for coherent diffractive imaging
     [3] Maximum-likelihood estimation in ptychography in the presence of Poisson-Gaussian noise statistics
 
-    for LSQ it's better to use sqrt(I) rather than I
-    For PNL  I
+    for LSQ it's better to use sqrt(I) rather than I [1]
+    For PNL  I [2]
     Counting is copied from [1] and expects I 
     Pu_Ga is copied from [3] with sigma_masked being variance of the readout noise estimated from darks apriory and  masked accourdingly
 
