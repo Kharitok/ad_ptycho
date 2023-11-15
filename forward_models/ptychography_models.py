@@ -24,6 +24,7 @@ from .element_models.sample_models import (
     SampleRefractive,
     SampleVariableThickness,
     SampleRefractiveConstrained,
+    SampleRefractiveConstrained_split,
 )
 
 from .element_models.propagator_models import (
@@ -218,6 +219,8 @@ class PtychographyModelTransmissionSupported(th.nn.Module):
             self.Sample = SampleVariableThickness(**sample_params)
         elif sample_type == 'refractive_constrained':
             self.Sample = SampleRefractiveConstrained(**sample_params)
+        elif sample_type == 'SampleRefractiveConstrained_split':
+            self.Sample = SampleRefractiveConstrained_split(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
 
