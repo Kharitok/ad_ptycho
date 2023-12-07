@@ -42,13 +42,8 @@ def total_variation_reg(
     abs_x = th.abs(input_tensor)
     ang_x = th.angle(input_tensor)
 
-    return (1 / th.numel(input_tensor)) * a1 * (
-        th.sum(th.abs(abs_x[..., :, 1:] - abs_x[..., :, :-1]))
-        + th.sum(th.abs(abs_x[..., 1:, :] - abs_x[..., :-1, :]))
-    ) + a2 * (
-        th.sum(th.abs(ang_x[..., :, 1:] - ang_x[..., :, :-1]))
-        + th.sum(th.abs(ang_x[..., 1:, :] - ang_x[..., :-1, :]))
-    )
+    return (1 / th.numel(input_tensor)) * (a1 * (th.sum(th.abs(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.abs(th.diff(abs_x,n=1, dim=-2))))+
+    a2 * (th.sum(th.angle(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.angle(th.diff(abs_x,n=1, dim=-2)))))
 
 
 def total_variation_refractive_reg(
@@ -149,11 +144,76 @@ def generalized_total_variation_second_refractive_isotropic_reg(
     )
 
 
+def total_variation_1_reg(
+    input_tensor: th.tensor, a1: float = 1, a2: float = 1
+) -> th.Tensor:
+    """Calculates total variantion of the 1st order of the input tensor weighted with a1 for modulus and a2 for phase
+    """
+    abs_x = th.abs(input_tensor)
+    ang_x = th.angle(input_tensor)
+
+    return (1 / th.numel(input_tensor)) * (a1 * (th.sum(th.abs(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.abs(th.diff(abs_x,n=1, dim=-2))))+
+    a2 * (th.sum(th.angle(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.angle(th.diff(abs_x,n=1, dim=-2)))))
+
+def total_variation_2_reg(
+    input_tensor: th.tensor, a1: float = 1, a2: float = 1
+) -> th.Tensor:
+    """Calculates total variantion of the 2st order of the input tensor weighted with a1 for modulus and a2 for phase
+    """
+    abs_x = th.abs(input_tensor)
+    ang_x = th.angle(input_tensor)
+
+    return (1 / th.numel(input_tensor)) * (a1 * (th.sum(th.abs(th.diff(abs_x,n=2, dim=-1)))+th.sum(th.abs(th.diff(abs_x,n=2, dim=-2))))+
+    a2 * (th.sum(th.angle(th.diff(abs_x,n=2, dim=-1)))+th.sum(th.angle(th.diff(abs_x,n=2, dim=-2)))))
+
+def total_variation_1_2_reg(
+    input_tensor: th.tensor, a11: float = 1, a12: float = 1,a21: float = 1, a22: float = 1
+) -> th.Tensor:
+    """Calculates total variantion of the 1st and 2nd order of the input tensor weighted with a1 for modulus and a2 for phase
+    """
+    abs_x = th.abs(input_tensor)
+    ang_x = th.angle(input_tensor)
+
+    return (1 / th.numel(input_tensor)) * (a11 * (th.sum(th.abs(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.abs(th.diff(abs_x,n=1, dim=-2))))+
+    a21 * (th.sum(th.angle(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.angle(th.diff(abs_x,n=1, dim=-2))))+ a12 * 
+                                           (th.sum(th.abs(th.diff(abs_x,n=2, dim=-1)))+th.sum(th.abs(th.diff(abs_x,n=2, dim=-2))))+
+    a22 * (th.sum(th.angle(th.diff(abs_x,n=2, dim=-1)))+th.sum(th.angle(th.diff(abs_x,n=2, dim=-2)))))
+
+def l_n_reg(
+    input_tensor: th.tensor, a1: float = 1, a2: float = 1, order:float=1,
+) -> th.Tensor:
+    """Calculates a norm of the order ord of the input tensor weighted with a1 for modulus and a2 for phase
+    """
+    abs_x = th.abs(input_tensor)
+    ang_x = th.angle(input_tensor)
+
+    return (1 / th.numel(input_tensor)) * (a1*th.linalg.vector_norm(abs_x+1e-2,ord=order)+a2*th.linalg.vector_norm(ang_x+1e-2,ord=order))
+
+def abs_reg(
+    input_tensor: th.tensor, a1: float = 1,
+) -> th.Tensor:
+    """Calculates aaverage modulus of the input tensor weighted with a1 for modulus and a2 for phase
+    """
+
+    return ((1 / th.numel(input_tensor)) * (a1*th.abs(input_tensor).sum()))
+
+
 # ___________Loss Criterion___________
 
 
 class LossEstimator:
-    """Class containing different loss functions to be used during the optimization"""
+    """Class containing different loss functions to be used during the optimization
+    consult with [1] Noise models for low counting rate coherent diffraction imaging 
+    https://doi.org/10.1364/OE.20.025914
+    [2] Maximum-likelihood refinement for coherent diffractive imaging
+    [3] Maximum-likelihood estimation in ptychography in the presence of Poisson-Gaussian noise statistics
+
+    for LSQ it's better to use sqrt(I) rather than I [1]
+    For PNL  I [2]
+    Counting is copied from [1] and expects I 
+    Pu_Ga and  Pu_Ga_without_sigma are  copied from [3] with sigma_masked being variance of the readout noise estimated from darks apriory and  masked accourdingly
+
+    """
 
     def __init__(self, Mask=None):
         if Mask is not None:
@@ -166,56 +226,35 @@ class LossEstimator:
         self.PNL_usual = th.nn.PoissonNLLLoss(log_input=False)
         self.PNL_log = th.nn.PoissonNLLLoss(log_input=True)
 
-    def __call__(self, Approx, Measured, mode="LSQ", Mask=None):
-        if (self.Mask is None) and (Mask is None):
-            if mode == "LSQ":
-                return self.LSQ(Approx, Measured)
-            elif mode == "LSQ_rel":
-                return (
-                    ((Measured - Approx) ** 2).sum(dim=[1, 2])
-                    / ((Measured**2).sum(dim=[1, 2]))
-                ).mean()
-            elif mode == "PNL":
-                return self.PNL_usual(Approx**2, Measured**2)
-            elif mode == "PNL_log":
-                return self.PNL_log(Approx**2, Measured**2)
-            else:
-                raise ValueError("Unknown mode")
-
-        elif not (Mask is None):
+    def __call__(self, Approx, Measured, mode="LSQ", Mask=None,sigma_masked=None):
+        if not (Mask is None):
             Approx = Approx * Mask
             Measured = Measured * Mask
-
-            if mode == "LSQ":
-                return self.LSQ(Approx, Measured)
-            elif mode == "LSQ_rel":
-                return (
-                    ((Measured - Approx) ** 2).sum(dim=[1, 2])
-                    / ((Measured**2).sum(dim=[1, 2]))
-                ).mean()
-            elif mode == "PNL":
-                return self.PNL_usual(Approx**2, Measured**2)
-            elif mode == "PNL_log":
-                return self.PNL_log(Approx**2, Measured**2)
-            else:
-                raise ValueError("Unknown mode")
-        else:
+        elif not(self.Mask is None):
             Approx = Approx * self.Mask
             Measured = Measured * self.Mask
 
-            if mode == "LSQ":
-                return self.LSQ(Approx, Measured)
-            elif mode == "LSQ_rel":
-                return (
-                    ((Measured - Approx) ** 2).sum(dim=[1, 2])
-                    / ((Measured**2).sum(dim=[1, 2]))
-                ).mean()
-            elif mode == "PNL":
-                return self.PNL_usual(Approx**2, Measured**2)
-            elif mode == "PNL_log":
-                return self.PNL_log(Approx**2, Measured**2)
-            else:
-                raise ValueError("Unknown mode")
+        if mode == "LSQ":
+            return self.LSQ(Approx, Measured)
+        elif mode == "LSQ_rel":
+            return (
+                ((Measured - Approx) ** 2).sum(dim=[1, 2])
+                / ((Measured**2).sum(dim=[1, 2]))
+            ).mean()
+        elif mode == "PNL":
+            return self.PNL_usual(Approx, Measured)
+        elif mode == "PNL_log":
+            return self.PNL_log(Approx, Measured)
+        elif mode == "Counting":
+            return (((Measured-Approx)/(Measured+1e-7))**2).mean()
+        elif mode == "Pu_Ga_without_sigma":
+            return (((Measured-Approx)/(th.sqrt(Measured)+1e-7))**2).mean()
+        elif mode == "Pu_Ga":
+            return (th.log(Approx+sigma_masked+1e-7)+ ((Measured-Approx)**2)/(Approx+sigma_masked+1e-7)).mean()
+        else:
+            raise ValueError("Unknown mode")
+
+
 
 
             +l1_norm_reg(model_output*(1.0-mask),a1=2e-2,a2=0)
