@@ -16,67 +16,67 @@ def Colorize(z):
     c[idx] = [hsv_to_rgb(a, b, b) for a, b in zip(A, B)]
     return c
 
-def show_3d(X):
+def show_3d(X,title=''):
     # abs__,angle__ = np.abs(expanded),np.angle(expanded)
 
     plt.figure()
     plt.imshow(Colorize(X[X.shape[0]//2,:,:].detach().cpu().numpy()),origin = 'lower')
-    plt.title("(x) Dim 0 (z)")
+    plt.title("(x) Dim 0 (z)"+title)
     plt.ylabel(' Dim 1 (x)')
     plt.xlabel(' Dim 2 (y)')
 
     plt.figure()
     plt.imshow(Colorize(X[:,X.shape[1]//2,:].detach().cpu().numpy()),origin = 'lower')
-    plt.title("⨀ Dim 1 (x)")
+    plt.title("⨀ Dim 1 (x)"+title)
     plt.ylabel(' Dim 0 (z)')
     plt.xlabel(' Dim 2 (y)')
 
     plt.figure()
     plt.imshow(Colorize(X[:,:,X.shape[2]//2].detach().cpu().numpy()),origin = 'lower')
-    plt.title("(x) Dim 2 (y)")
+    plt.title("(x) Dim 2 (y)"+title)
     plt.ylabel(' Dim 0 (z)')
     plt.xlabel(' Dim 1 (x)')
 
 
-def show_3d_abs(X):
+def show_3d_abs(X,title=''):
     abs__ = np.abs(X.detach().cpu().numpy())
 
     plt.figure()
     plt.imshow(abs__[abs__.shape[0]//2,:,:],origin = 'lower')
-    plt.title("(x) Dim 0 (z)")
-    plt.ylabel(' Dim 1 (x)')
-    plt.xlabel(' Dim 2 (y)')
+    plt.title("(x) Dim 0 (z)"+title)
+    plt.ylabel(' Dim 1 (x)'+title)
+    plt.xlabel(' Dim 2 (y)'+title)
 
     plt.figure()
     plt.imshow(abs__[:,abs__.shape[0]//2,:],origin = 'lower')
-    plt.title("⨀ Dim 1 (x)")
-    plt.ylabel(' Dim 0 (z)')
-    plt.xlabel(' Dim 2 (y)')
+    plt.title("⨀ Dim 1 (x)"+title)
+    plt.ylabel(' Dim 0 (z)'+title)
+    plt.xlabel(' Dim 2 (y)'+title)
 
     plt.figure()
     plt.imshow(abs__[:,:,abs__.shape[0]//2],origin = 'lower')
-    plt.title("(x) Dim 2 (y)")
-    plt.ylabel(' Dim 0 (z)')
-    plt.xlabel(' Dim 1 (x)')
+    plt.title("(x) Dim 2 (y)"+title)
+    plt.ylabel(' Dim 0 (z)'+title)
+    plt.xlabel(' Dim 1 (x)'+title)
     
-def show_3d_ang(X):
+def show_3d_ang(X,title=''):
     angle__ =np.angle(X.detach().cpu().numpy())
 
     plt.figure()
     plt.imshow(angle__[angle__.shape[0]//2,:,:],origin = 'lower')
-    plt.title("(x) Dim 0 (z)")
-    plt.ylabel(' Dim 1 (x)')
-    plt.xlabel(' Dim 2 (y)')
+    plt.title("(x) Dim 0 (z)"+title)
+    plt.ylabel(' Dim 1 (x)'+title)
+    plt.xlabel(' Dim 2 (y)'+title)
 
 
     plt.figure()
     plt.imshow(angle__[:,angle__.shape[0]//2,:],origin = 'lower')
-    plt.title("⨀ Dim 1 (x)")
-    plt.ylabel(' Dim 0 (z)')
-    plt.xlabel(' Dim 2 (y)')
+    plt.title("⨀ Dim 1 (x)"+title)
+    plt.ylabel(' Dim 0 (z)'+title)
+    plt.xlabel(' Dim 2 (y)'+title)
 
     plt.figure()
     plt.imshow(angle__[:,:,angle__.shape[0]//2],origin = 'lower')
-    plt.title("(x) Dim 2 (y)")
-    plt.ylabel(' Dim 0 (z)')
-    plt.xlabel(' Dim 1 (x)')
+    plt.title("(x) Dim 2 (y)"+title)
+    plt.ylabel(' Dim 0 (z)'+title)
+    plt.xlabel(' Dim 1 (x)'+title)
