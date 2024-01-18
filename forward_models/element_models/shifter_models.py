@@ -366,7 +366,7 @@ class ShifterRotationalElastic(ShifterRotational):
 
 
 class ShifterDefault_Fourrier(th.nn.Module):
-    """Scans the sample using differentiable fourrier shoift, performs position correction by optimizing xand y shifts
+    """Scans the sample using differentiable fourrier shifts, performs position correction by optimizing xand y shifts
     init_shifts are assumed to be (N,2) array or tensor (N_pos,[x,y]) in pixels +y = |^, +x = <-
     """
 
@@ -423,4 +423,132 @@ class ShifterDefault_Fourrier(th.nn.Module):
 
         return sample[
             :, self.borders[0] : self.borders[1], self.borders[2] : self.borders[3]
+        ]
+    
+
+class Shifter3DFourrier(th.nn.Module):
+    """Scans the 3d sample using differentiable fourrier shifts and performs position correction by optimizing them.
+    init_shifts are assumed to be (N,3) array or tensor (N_pos,[-3,-2,-1] dims) in pixels 
+    """
+
+    def __init__(
+        self,
+        init_shifts: th.Tensor,
+        borders: tuple,
+        sample_shape: th.Tensor,
+    ) -> None:
+        
+        super().__init__()
+        self.borders = borders
+        self.init_shifts = init_shifts  # in pixels
+
+        self.register_buffer("shifts_initial", self.init_shifts.data)  # .cuda()
+
+        freq_z  = fftshift_t(fftfreq_t(sample_shape[-3], 1),dim=(0))
+        freq_x  = fftshift_t(fftfreq_t(sample_shape[-2], 1),dim=(0))
+        freq_y  = fftshift_t(fftfreq_t(sample_shape[-1], 1),dim=(0))
+
+        self.register_buffer("freq_z", freq_z.data)
+        self.register_buffer("freq_x", freq_x.data)
+        self.register_buffer("freq_y", freq_y.data)
+        
+
+        self.shifts_correction = nn.Parameter(
+            th.zeros(init_shifts.shape, dtype=th.float32)
+        )
+
+        # t_shift = th.tensor(((100,0),(0,0),(0,100)),dtype = th.float)
+        # t_shift.requires_grad= True
+        # f_signal
+
+        # f_signal = th.fft.fft2(t_s,norm = 'ortho')
+        # freq_x, freq_y = th.meshgrid(th.fft.fftfreq(f_signal.shape[0], 1), th.fft.fftfreq(f_signal.shape[1], 1),indexing = 'ij')
+        # shift_op = th.exp(-2j*th.pi * (freq_x[None,...]*t_shift[:,0][...,None,None]+freq_y[None,...]*t_shift[:,1][...,None,None]))
+        # shifted_f = shift_op*f_signal
+        # shifted_signal = th.fft.ifft2(shifted_f,norm = 'ortho')
+
+
+#         shift_exp = th.exp(-2j* th.pi * (freq_z[None,:,None,None]*shifts[:,0,None,None,None]+
+#                                  freq_x[None,None,:,None]*shifts[:,None,1,None,None]+
+#                                  freq_y[None,None,None,:]*shifts[:,None,None,2,None]))
+
+#           b_sh_cube = ifftnd_t(fftnd_t(test_cube,(-3,-2,-1))*shift_exp,(-3,-2,-1))
+
+    def forward(self, sample, scan_numbers):
+        """get sample function at coordinates corresponding to scan_numbers"""
+        shifts = (
+            self.shifts_correction[scan_numbers] + self.shifts_initial[scan_numbers]
+        )
+
+        shift_exp = th.exp(-2j* th.pi * (self.freq_z[None,:,None,None]*shifts[:,0,None,None,None]+
+                                     self.freq_x[None,None,:,None]*shifts[:,None,1,None,None]+
+                                     self.freq_y[None,None,None,:]*shifts[:,None,None,2,None]))
+
+        # print(sample.shape,shift_exp.shape)
+        return ifftnd_t(fftnd_t(sample,(-3,-2,-1))*shift_exp,(-3,-2,-1))[
+            :, self.borders[0] : self.borders[1], self.borders[2] : self.borders[3],self.borders[4] : self.borders[5]
+        ]
+    
+
+class Shifter3DFourrieRreduced(th.nn.Module):
+    """Scans the 3d sample using differentiable fourrier shifts and performs position correction by optimizing them.
+    init_shifts are assumed to be (N,3) array or tensor (N_pos,[-3,-2,-1] dims) in pixels 
+    """
+
+    def __init__(
+        self,
+        init_shifts: th.Tensor,
+        borders: tuple,
+        sample_shape: th.Tensor,
+    ) -> None:
+        
+        super().__init__()
+        self.borders = borders
+        self.init_shifts = init_shifts  # in pixels
+
+        self.register_buffer("shifts_initial", self.init_shifts.data)  # .cuda()
+
+        freq_z  = fftfreq_t(sample_shape[-3], 1)
+        freq_x  = fftfreq_t(sample_shape[-2], 1)
+        freq_y  = fftfreq_t(sample_shape[-1], 1)
+
+        self.register_buffer("freq_z", freq_z.data)
+        self.register_buffer("freq_x", freq_x.data)
+        self.register_buffer("freq_y", freq_y.data)
+        
+
+        self.shifts_correction = nn.Parameter(
+            th.zeros(init_shifts.shape, dtype=th.float32)
+        )
+
+        # t_shift = th.tensor(((100,0),(0,0),(0,100)),dtype = th.float)
+        # t_shift.requires_grad= True
+        # f_signal
+
+        # f_signal = th.fft.fft2(t_s,norm = 'ortho')
+        # freq_x, freq_y = th.meshgrid(th.fft.fftfreq(f_signal.shape[0], 1), th.fft.fftfreq(f_signal.shape[1], 1),indexing = 'ij')
+        # shift_op = th.exp(-2j*th.pi * (freq_x[None,...]*t_shift[:,0][...,None,None]+freq_y[None,...]*t_shift[:,1][...,None,None]))
+        # shifted_f = shift_op*f_signal
+        # shifted_signal = th.fft.ifft2(shifted_f,norm = 'ortho')
+
+
+#         shift_exp = th.exp(-2j* th.pi * (freq_z[None,:,None,None]*shifts[:,0,None,None,None]+
+#                                  freq_x[None,None,:,None]*shifts[:,None,1,None,None]+
+#                                  freq_y[None,None,None,:]*shifts[:,None,None,2,None]))
+
+#           b_sh_cube = ifftnd_t(fftnd_t(test_cube,(-3,-2,-1))*shift_exp,(-3,-2,-1))
+
+    def forward(self, sample, scan_numbers):
+        """get sample function at coordinates corresponding to scan_numbers"""
+        shifts = (
+            self.shifts_correction[scan_numbers] + self.shifts_initial[scan_numbers]
+        )
+
+        shift_exp = th.exp(-2j* th.pi * (self.freq_z[None,:,None,None]*shifts[:,0,None,None,None]+
+                                     self.freq_x[None,None,:,None]*shifts[:,None,1,None,None]+
+                                     self.freq_y[None,None,None,:]*shifts[:,None,None,2,None]))
+
+        # print(sample.shape,shift_exp.shape)
+        return ifftn_t(fftn_t(sample,dim=(-3,-2,-1))*shift_exp,dim=(-3,-2,-1))[
+            :, self.borders[0] : self.borders[1], self.borders[2] : self.borders[3],self.borders[4] : self.borders[5]
         ]
