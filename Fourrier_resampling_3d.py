@@ -57,6 +57,22 @@ def shift_3d_fourrier(X:th.tensor,shifts : th.tensor) -> th.tensor:
     return ifftnd_t(fftnd_t(X,(0,1,2))*shift_exp,(0,1,2))
 
 
+def shift_3d_fourrier_reduced(X:th.tensor,shifts : th.tensor) -> th.tensor:
+    """
+    Shifts 3d Tensor utilizing Fourrier shift theorem
+    Args:
+    X (th.tensor): The input tensor.
+    shifts (th.tensor): The shifts to apply in each dimension.
+    Returns:
+    th.tensor: The result of the 3D Fourier shift.
+    """
+    freq_z  = fftfreq_t(X.shape[-3], 1)
+    freq_x  = fftfreq_t(X.shape[-2], 1)
+    freq_y  = fftfreq_t(X.shape[-1], 1)
+    shift_exp = th.exp(-2j* th.pi * (freq_z[:,None,None]*shifts[0]+freq_x[None,:,None]*shifts[1]+freq_y[None,None,:]*shifts[2]))
+    return ifftn_t(fftn_t(X,dim=(0,1,2))*shift_exp,dim=(0,1,2))
+
+
 ### Bulk resampling routines ###
 
 
