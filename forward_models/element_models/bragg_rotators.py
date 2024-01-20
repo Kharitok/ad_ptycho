@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch as th
 from torch.fft import fftshift as fftshift_t,  ifftshift as ifftshift_t , fftn as fftn_t, ifftn as ifftn_t, fftfreq as fftfreq_t
 import numpy as np
+from   ad_ptycho.Fourrier_resampling_3d import  fftnd_t, ifftnd_t,rotate_3D_m1,rotate_3D_m2,rotate_3D_m3,shift_3d_fourrier
 
 
 
@@ -157,3 +158,31 @@ class Probe_3d_projector_reduced(th.nn.Module):
     
     def forward(self,probe:th.Tensor) -> th.Tensor:
         return (self.rotate(self.rotate(probe.unsqueeze(-3))))
+    
+
+
+
+def generate_slab_support(space_3d_shape,eta_rad,assumed_sample_thickness,rec_resolution):
+
+
+    size = space_3d_shape
+
+
+    z,y,x = np.arange(size[0])-size[0]//2 , np.arange(size[1])-size[1]//2, np.arange(size[2])-size[2]//2
+    z,y,x = z*rec_resolution,y*rec_resolution,x*rec_resolution
+
+    zz,xx,yy = np.meshgrid(z,y,x,sparse=True, indexing='ij')
+
+
+    center_coords = np.array((0,0,0))
+    normal_vector = np.array((np.sin(eta_rad),np.cos(eta_rad),0))
+    shift_vec = np.array(((assumed_sample_thickness/2)/np.sin(eta_rad),0,0))
+
+    center_coords_t = center_coords +shift_vec
+    center_coords_b = center_coords -shift_vec
+
+    # center_coords_t*=10
+    if_plane_top = normal_vector[0]*zz+normal_vector[1]*yy+normal_vector[2]*xx  - np.sum(normal_vector*center_coords_t)
+    if_plane_bottom = normal_vector[0]*zz+normal_vector[1]*yy+normal_vector[2]*xx  - np.sum(normal_vector*center_coords_b)
+
+    return (if_plane_bottom>0)*(if_plane_top<0)
