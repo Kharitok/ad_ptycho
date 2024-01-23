@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 import ad_ptycho.Plotting_utils as plot_
 
+from typing import List
 
 # FFt routines for future convenience
 
@@ -77,7 +78,7 @@ def shift_3d_fourrier_reduced(X:th.tensor,shifts : th.tensor) -> th.tensor:
 
 
 def get_pad_size_for_bulk_resampling(
-    shape: list[int], sampling_init: list[float], sampling_desired: list[float]
+    shape: List[int], sampling_init: List[float], sampling_desired: List[float]
 ) -> th.Tensor:
     """
     Calculates the padding size required for bulk resampling of data.
