@@ -43,7 +43,21 @@ def total_variation_reg(
     ang_x = th.angle(input_tensor)
 
     return (1 / th.numel(input_tensor)) * (a1 * (th.sum(th.abs(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.abs(th.diff(abs_x,n=1, dim=-2))))+
-    a2 * (th.sum(th.angle(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.angle(th.diff(abs_x,n=1, dim=-2)))))
+    a2 * (th.sum(th.abs(th.diff(ang_x,n=1, dim=-1)))+th.sum(th.abs(th.diff(ang_x,n=1, dim=-2)))))
+
+
+def total_variation_reg3d(
+    input_tensor: th.tensor, a1: float = 1, a2: float = 1
+) -> th.Tensor:
+    """Calculates total variantion of the input tensor weighted with a1 for modulus and a2 for phase
+    """
+    abs_x = th.abs(input_tensor)
+    ang_x = th.angle(input_tensor)
+
+    return (1 / th.numel(input_tensor)) * (a1 * (th.sum(th.abs(th.diff(abs_x,n=1, dim=-1)))+th.sum(th.abs(th.diff(abs_x,n=1, dim=-2))) +
+    th.sum(th.abs(th.diff(abs_x,n=1, dim=-3))))+
+    a2 * (th.sum(th.abs(th.diff(ang_x,n=1, dim=-1)))+th.sum(th.abs(th.diff(ang_x,n=1, dim=-2)))+
+    th.sum(th.abs(th.diff(ang_x,n=1, dim=-3)))))
 
 
 def total_variation_refractive_reg(
