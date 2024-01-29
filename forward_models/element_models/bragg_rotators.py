@@ -181,21 +181,37 @@ class Probe_3d_projector_reduced_near90(th.nn.Module):
     ) -> None:
         
         super().__init__()
-        
-        self.interaction_length_pixels = interaction_length_pixels
-        self.probe_shape = probe_shape
-        self.probe_shape_3d = (interaction_length_pixels,)+probe_shape
-        self.bragg_angle = bragg_angle
-        self.axis = axis
-
-
         self.co_axis_1 = {-1:-3,-2:-1,-3:-2}.get(axis)
         self.co_axis_2 = {-1:-2,-2:-3,-3:-1}.get(axis)
         co_axis_1_slice = {-1:(...,None,None,),-2:(None, None, ...),-3:(None, ..., None)}.get(axis)
         co_axis_2_slice = {-1:(None,...,None),-2:(..., None, None),-3:(None, None, ...)}.get(axis)
+        
+        self.interaction_length_pixels = interaction_length_pixels
+        self.probe_shape = probe_shape
+        
+        t_shape = [interaction_length_pixels,]+list(probe_shape)
+        # print(t_shape)
+        tmp = t_shape[self.co_axis_1]
+        t_shape[self.co_axis_1] = t_shape[self.co_axis_2]
+        t_shape[self.co_axis_2] = tmp
+    
+        self.probe_shape_3d = tuple(t_shape)
+        # print(self.probe_shape_3d)
+        
+        
+        self.rotation_angle = -(np.radians(90)-2*bragg_angle)
+        self.bragg_angle = bragg_angle
+        self.axis = axis
+        
+        self.shape_for_pad = ((probe_shape[0] - interaction_length_pixels)//2,)*2
+        
 
-        self.a = np.tan(bragg_angle / 2)
-        self.b = -np.sin(bragg_angle)
+
+        
+
+
+        self.a = np.tan(self.rotation_angle / 2)
+        self.b = -np.sin(self.rotation_angle)
 
 
         freq_c1 = (fftfreq_t(self.probe_shape_3d[self.co_axis_1], 1))[co_axis_1_slice]
@@ -212,10 +228,10 @@ class Probe_3d_projector_reduced_near90(th.nn.Module):
         shift_exp_c2 = th.exp(-2j * th.pi * freq_c2 * pix_1)
         self.register_buffer("shift_exp_c2", shift_exp_c2.data)
 
-        self.reverse_ind  = th.arange(self.probe_shape_3d[self.co_axis_1]- 1, -1, -1)
+        self.reverse_ind  = th.arange(self.probe_shape_3d[self.co_axis_2]- 1, -1, -1).to(th.long)
         self.register_buffer("reverse_index", self.reverse_ind.data)
 
-
+        self.register_buffer("dimproj", th.ones(self.interaction_length_pixels)[:,None,None].data)
    
 
 
@@ -238,7 +254,9 @@ class Probe_3d_projector_reduced_near90(th.nn.Module):
     
     
     def forward(self,probe:th.Tensor) -> th.Tensor:
-        return th.transpose( probe.unsqueeze(-3)*th.ones(self.probe_shape_3d[0])[:,None,None],self.co_axis_1,self.co_axis_2)[self.reverse_ind,...]
+
+        return self.rotate(th.transpose( probe.unsqueeze(-3)*self.dimproj,self.co_axis_1,self.co_axis_2)[:,self.reverse_ind,...])
+                # Pad(self.shape_for_pad)
         # return (self.rotate(self.rotate(probe.unsqueeze(-3))))
 
 
