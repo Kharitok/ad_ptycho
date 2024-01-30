@@ -15,7 +15,23 @@ th.backends.cudnn.benchmark = True
 
 
 # ___________Probe models___________
+class ProbeComplexShotToShotConstant_variable_int(th.nn.Module):
+    """Multymodal (can be usefd for fully coherent with one mode) probe
+    constant from one shot to another. Implemented with complex tensor.
+    """
 
+    def __init__(self, init_probe):
+        super().__init__()
+        if len(init_probe.shape) == 2:
+            self.probe = nn.Parameter((th.from_numpy(init_probe).cfloat())[None, :, :])
+        else:
+            self.probe = nn.Parameter(th.from_numpy(init_probe).cfloat())
+
+        self.scaling = nn.Parameter(th.ones(init_probe.shape[0]))
+
+    def forward(self, scan_numbers=None):
+        """Returns probe function at scan_numbers positions"""
+        return self.scaling[None,:,None,None]*self.probe[None, ...]
 
 class ProbeComplexShotToShotConstant(th.nn.Module):
     """Multymodal (can be usefd for fully coherent with one mode) probe
