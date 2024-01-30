@@ -350,16 +350,8 @@ class PtychographyModelBragg(th.nn.Module):
         else:
             raise ValueError("Unknown sample_type")
 
-        if shifter_type == "default":
-            self.Shifter = ShifterDefault(**shifter_params)
-        elif shifter_type == "elastic":
-            self.Shifter = ShifterElastic(**shifter_params)
-        elif shifter_type == "rotational":
-            self.Shifter = ShifterRotational(**shifter_params)
-        elif shifter_type == "rotational_elastic":
-            self.Shifter = ShifterRotationalElastic(**shifter_params)
-        elif shifter_type == "default_fourrier":
-            self.Shifter = ShifterDefault_Fourrier(**shifter_params)
+        if shifter_type == "Shifter3DFourrieRreduced":
+            self.Shifter = Shifter3DFourrieRreduced(**shifter_params)
         else:
             raise ValueError("Unknown shifter_type")
 
@@ -375,9 +367,14 @@ class PtychographyModelBragg(th.nn.Module):
 
         if projector_type == "Probe_3d_projector_reduced":
             self.Projector = Probe_3d_projector_reduced(**projector_params)
+        elif projector_type == 'Probe_3d_projector_reduced_near90':
+            self.Projector = Probe_3d_projector_reduced_near90(**projector_params)
+        else:
+            raise ValueError("Unknown projector_type")
+            
             
         self.Support = Support(**support_params)
-
+        
 
 
     def forward(self, scan_numbers):
@@ -391,10 +388,4 @@ class PtychographyModelBragg(th.nn.Module):
         # )
 
 
-        return self.Propagator(
-        self.Shifter(self.Sample(),scan_numbers)[:,None,:,:,:]
-        * self.Support(
-            self.Projector(
-                self.Probe(scan_numbers),scan_numbers))
-        )
-        pass
+        return self.Propagator(Pad((self.Shifter(self.Support(self.Sample()),scan_numbers)[:,None,...]*self.Projector(self.Probe(scan_numbers)[0])[None,...]).sum(axis = 2),self.Projector.shape_for_pad))
