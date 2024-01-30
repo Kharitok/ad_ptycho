@@ -38,6 +38,7 @@ from .element_models.shifter_models import (
     ShifterRotational,
     ShifterRotationalElastic,
     ShifterDefault_Fourrier,
+    Shifter3DFourrieRreduced
 )
 
 from .element_models.support_models import (
