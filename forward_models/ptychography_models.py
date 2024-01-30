@@ -46,7 +46,8 @@ from .element_models.support_models import (
 )
 
 from .element_models.bragg_rotators import (
-    Probe_3d_projector_reduced
+    Probe_3d_projector_reduced,
+    Probe_3d_projector_reduced_near90
 )
 
 
