@@ -50,6 +50,16 @@ from .element_models.bragg_rotators import (
     Probe_3d_projector_reduced_near90
 )
 
+from .element_models.probe_models import (
+    ProbeComplexShotToShotConstant,
+    ProbeDoubleRealShotToShotConstant,
+    ProbeComplexShotToShotVariable,
+    ProbeDoubleRealShotToShotVariable,
+    ProbeComplexShotToShotVariable_coherent,
+    ProbeComplexShotToShotVariable_coherent_incoherent
+)
+
+from ..utils import Pad
 
 # th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
 # th.backends.cudnn.benchmark = True
