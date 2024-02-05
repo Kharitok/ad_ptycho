@@ -51,7 +51,7 @@ class ProbeComplexShotToShotConstant_variable_int_supported(th.nn.Module):
 
     def forward(self, scan_numbers=None):
         """Returns probe function at scan_numbers positions"""
-        return self.scaling[None,:,None,None]*self.probe[None, ...]*self.support[None,...]
+        return self.scaling[None,:,None,None]*self.probe[None, ...]*self.support[None,None,...]
 
 class ProbeComplexShotToShotConstant(th.nn.Module):
     """Multymodal (can be usefd for fully coherent with one mode) probe
