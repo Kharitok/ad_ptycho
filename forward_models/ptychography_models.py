@@ -49,7 +49,8 @@ from .element_models.support_models import (
 
 from .element_models.bragg_rotators import (
     Probe_3d_projector_reduced,
-    Probe_3d_projector_reduced_near90
+    Probe_3d_projector_reduced_near90,
+    Probe_3d_projector_reduced_near90_cut
 )
 
 from .element_models.probe_models import (
@@ -387,6 +388,8 @@ class PtychographyModelBragg(th.nn.Module):
             self.Projector = Probe_3d_projector_reduced(**projector_params)
         elif projector_type == 'Probe_3d_projector_reduced_near90':
             self.Projector = Probe_3d_projector_reduced_near90(**projector_params)
+        elif self.projector_type == 'Probe_3d_projector_reduced_near90_cut':
+            self.Projector == Probe_3d_projector_reduced_near90_cut(**projector_params)
         else:
             raise ValueError("Unknown projector_type")
             
