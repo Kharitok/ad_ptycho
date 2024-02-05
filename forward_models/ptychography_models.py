@@ -16,7 +16,8 @@ from .element_models.probe_models import (
     ProbeDoubleRealShotToShotVariable,
     ProbeComplexShotToShotVariable_coherent,
     ProbeComplexShotToShotVariable_coherent_incoherent,
-    ProbeComplexShotToShotConstant_variable_int
+    ProbeComplexShotToShotConstant_variable_int,
+    ProbeComplexShotToShotConstant_variable_int_supported
 )
 
 from .element_models.sample_models import (
@@ -347,6 +348,8 @@ class PtychographyModelBragg(th.nn.Module):
             self.Probe = ProbeComplexShotToShotVariable_coherent_incoherent(**probe_params)
         elif probe_type == 'ProbeComplexShotToShotConstant_variable_int':
             self.Probe = ProbeComplexShotToShotConstant_variable_int(**probe_params)
+        elif probe_type == 'ProbeComplexShotToShotConstant_variable_int_supported':
+            self.Probe = ProbeComplexShotToShotConstant_variable_int_supported(**probe_params)
         else:
             raise ValueError("Unknown probe_type")
 
