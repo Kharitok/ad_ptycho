@@ -27,6 +27,7 @@ from .element_models.sample_models import (
     SampleVariableThickness,
     SampleRefractiveConstrained,
     SampleRefractiveConstrained_split,
+    Sample_point_approximator,
 )
 
 from .element_models.propagator_models import (
@@ -366,6 +367,8 @@ class PtychographyModelBragg(th.nn.Module):
             self.Sample = SampleRefractiveConstrained(**sample_params)
         elif sample_type == 'SampleRefractiveConstrained_split':
             self.Sample = SampleRefractiveConstrained_split(**sample_params)
+        elif sample_type == 'Sample_point_approximator':
+            self.Sample = Sample_point_approximator(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
 

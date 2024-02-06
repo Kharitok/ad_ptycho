@@ -141,6 +141,72 @@ class SampleRefractiveConstrained_split(th.nn.Module):
         return (trans, phase)
 
 
+
+
+
+
+def thresh(x,a=0.3):
+    return (1+th.tanh(x/a))
+
+class Sample_point_approximator(th.nn.Module):
+    """Fits point arrays"""
+
+    def __init__(self,bragg_angle,per_x,per_z,per_y,shift_x,shift_z,shift_y,t_z,t_x,t_y, sample_size=None, init_sample=None,):
+        super().__init__()
+
+        if (sample_size is None) and (init_sample is None):
+            raise ValueError("Either sample_size or init_sample should be given")
+        elif init_sample is not None:
+            co_z = th.arange(init_sample.shape[0])[:,None,None]
+            co_x = th.arange(init_sample.shape[1])[None,:,None]
+            co_y = th.flip(th.arange(init_sample.shape[2])[None,None,:],[2])
+
+        else:
+            co_z = th.arange(sample_size[0])[:,None,None]
+            co_x = th.arange(sample_size[1])[None,:,None]
+            co_y = th.flip(th.arange(sample_size[2])[None,None,:],[2])
+            
+        mb = th.tensor(np.radians(90)-bragg_angle)
+        
+        self.cz = (th.sin(mb)*co_y) + (th.cos(mb)*co_z) 
+        self.cx = co_x
+        self.cy = ((-th.sin(mb)*co_z)  + (th.cos(mb)*co_y) )
+
+        self.register_buffer("coord_z", self.cz.data)
+        self.register_buffer("coord_x", self.cx.data)
+        self.register_buffer("coord_y", self.cy.data)
+        
+        
+        self.per_x = nn.Parameter(th.tensor(per_x.clone().detach()).float())
+        self.per_z = nn.Parameter(th.tensor(per_z.clone().detach()).float())
+        self.per_y = nn.Parameter(th.tensor(per_y.clone().detach()).float())
+        
+        self.shift_x = nn.Parameter(th.tensor(shift_x).float())
+        self.shift_z = nn.Parameter(th.tensor(shift_z).float())
+        self.shift_y = nn.Parameter(th.tensor(shift_y).float())
+        
+        self.t_z = nn.Parameter(th.tensor(t_z).float())
+        self.t_x =  nn.Parameter(th.tensor(t_x).float())
+        self.t_y =  nn.Parameter(th.tensor(t_y).float())
+        
+
+
+
+    def forward(self):
+        """Returns transfer function of the sample"""
+        return th.sigmoid(4*(thresh(th.sin((self.coord_z-self.shift_z)*self.per_z) -th.sigmoid(self.t_z),0.3) *
+        thresh(th.sin((self.coord_x-self.shift_x)*self.per_x) -th.sigmoid(self.t_x),0.3) *
+        thresh(th.sin((self.coord_y-self.shift_y)*self.per_y) -th.sigmoid(self.t_y),0.3))-6)
+            
+    
+
+#     def get_transmission_and_pase(self):
+#         """Returns transmission and phase of the sample"""
+#         trans = th.exp(-1 * th.exp(self.sample_trans.detach().cpu()))
+#         phase = self.sample_phase.detach().cpu()
+#         return (trans, phase)
+
+
 class SampleVariableThickness(th.nn.Module):
     """Sample model based on the constant refractive index and variable htickness"""
 
