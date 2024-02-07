@@ -118,7 +118,7 @@ class SampleRefractiveConstrained_split(th.nn.Module):
             raise ValueError("Either sample_size or init_sample should be given")
         elif init_sample is not None:
             trans = np.abs(init_sample)
-            inv_sig = np.log(1/trans-1)
+            inv_sig = -np.log(1/trans-1) 
             phase = np.angle(init_sample)# wrapping is here but so far we don't care
             self.sample_trans = nn.Parameter(th.from_numpy(inv_sig).float())
             self.sample_phase = nn.Parameter(th.from_numpy(phase).float())
