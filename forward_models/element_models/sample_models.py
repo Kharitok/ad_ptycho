@@ -148,6 +148,13 @@ class SampleRefractiveConstrained_split(th.nn.Module):
 def thresh(x,a=0.3):
     return (1+th.tanh(x/a))
 
+import torch.nn as nn
+
+
+def thresh(x,a=0.3):
+    return (1+th.tanh(x/a))
+
+
 class Sample_point_approximator(th.nn.Module):
     """Fits point arrays"""
 
@@ -165,6 +172,11 @@ class Sample_point_approximator(th.nn.Module):
             co_z = th.arange(sample_size[0])[:,None,None]
             co_x = th.arange(sample_size[1])[None,:,None]
             co_y = th.flip(th.arange(sample_size[2])[None,None,:],[2])
+        
+        
+        co_z=co_z -co_z.numel()/2
+        co_x=co_x -co_x.numel()/2
+        co_y=co_y -co_y.numel()/2
             
         mb = th.tensor(np.radians(90)-bragg_angle)
         
@@ -194,17 +206,12 @@ class Sample_point_approximator(th.nn.Module):
 
     def forward(self):
         """Returns transfer function of the sample"""
-        return th.sigmoid(4*(thresh(th.sin((self.coord_z-self.shift_z)*self.per_z) -th.sigmoid(self.t_z),0.3) *
-        thresh(th.sin((self.coord_x-self.shift_x)*self.per_x) -th.sigmoid(self.t_x),0.3) *
-        thresh(th.sin((self.coord_y-self.shift_y)*self.per_y) -th.sigmoid(self.t_y),0.3))-6)
+        return th.sigmoid(4*(thresh(th.sin((self.coord_z-self.shift_z)*(2*th.pi/self.per_z)) -th.sigmoid(self.t_z),0.3) *
+        thresh(th.sin((self.coord_x-self.shift_x)*(2*th.pi/self.per_x)) -th.sigmoid(self.t_x),0.3) *
+        thresh(th.sin((self.coord_y-self.shift_y)*(2*th.pi/self.per_y)) -th.sigmoid(self.t_y),0.3))-6)
             
     
 
-#     def get_transmission_and_pase(self):
-#         """Returns transmission and phase of the sample"""
-#         trans = th.exp(-1 * th.exp(self.sample_trans.detach().cpu()))
-#         phase = self.sample_phase.detach().cpu()
-#         return (trans, phase)
 
 
 class SampleVariableThickness(th.nn.Module):
