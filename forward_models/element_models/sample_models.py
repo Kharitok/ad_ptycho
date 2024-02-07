@@ -131,7 +131,7 @@ class SampleRefractiveConstrained_split(th.nn.Module):
     def forward(self):
         """Returns transfer function of the sample"""
         #return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
-        return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)))
+        return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)
     
 
     def get_transmission_and_pase(self):
