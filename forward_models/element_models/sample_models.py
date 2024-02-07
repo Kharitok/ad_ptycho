@@ -118,9 +118,9 @@ class SampleRefractiveConstrained_split(th.nn.Module):
             raise ValueError("Either sample_size or init_sample should be given")
         elif init_sample is not None:
             trans = np.abs(init_sample)
-            imag = np.log(np.log(trans)*-1)
+            inv_sig = np.log(1/trans-1)
             phase = np.angle(init_sample)# wrapping is here but so far we don't care
-            self.sample_trans = nn.Parameter(th.from_numpy(imag).float())
+            self.sample_trans = nn.Parameter(th.from_numpy(inv_sig).float())
             self.sample_phase = nn.Parameter(th.from_numpy(phase).float())
         else:
             # self.sample = nn.Parameter(th.zeros(sample_size, dtype=th.complex64)-5j)# for having ~ 1.0 sample
@@ -131,7 +131,7 @@ class SampleRefractiveConstrained_split(th.nn.Module):
     def forward(self):
         """Returns transfer function of the sample"""
         #return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
-        return th.exp(1j * (th.real(self.sample_phase) +1j*th.exp(self.sample_trans)))
+        return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)))
     
 
     def get_transmission_and_pase(self):
