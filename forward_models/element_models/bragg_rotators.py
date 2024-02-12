@@ -344,11 +344,11 @@ class Probe_3d_projector_reduced_near90_cut(th.nn.Module):
 
 
     def rotate(self,probe:th.Tensor) -> th.Tensor:
-        return fftshift(ifftn_t(
-            fftn_t(ifftshift(
-               fftshift( ifftn_t(
+        return fftshift_t(ifftn_t(
+            fftn_t(ifftshift_t(
+               fftshift_t( ifftn_t(
                     fftn_t(
-                        ifftshift(fftshift(ifftn_t(fftn_t(ifftshift(probe,dim =self.co_axis_1 ), dim=(self.co_axis_1)) * (self.shift_exp_c1), dim=(self.co_axis_1)),dim=(self.co_axis_1)),
+                        ifftshift_t(fftshift_t(ifftn_t(fftn_t(ifftshift_t(probe,dim =self.co_axis_1 ), dim=(self.co_axis_1)) * (self.shift_exp_c1), dim=(self.co_axis_1)),dim=(self.co_axis_1)),
                         dim=(self.co_axis_2)),
                         dim=(self.co_axis_2)
                     )
@@ -371,7 +371,7 @@ class Probe_3d_projector_reduced_near90_cut(th.nn.Module):
                 # Pad(self.shape_for_pad)
         # return (self.rotate(self.rotate(probe.unsqueeze(-3))))
     
-    
+
 
 # class Probe_3d_projector_reduced_near90_cut(th.nn.Module):
 #     """
