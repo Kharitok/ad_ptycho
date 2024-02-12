@@ -363,7 +363,7 @@ class Probe_3d_projector_reduced_near90_cut(th.nn.Module):
     
     
     def forward(self,probe:th.Tensor) -> th.Tensor:
-        print(self.axn1.shape,self.axn2.shape,self.axn3.shape,self.rotate(th.transpose( probe.unsqueeze(-3)*self.dimproj,self.co_axis_1,self.co_axis_2)[:,self.reverse_ind,...]).shape)
+        # print(self.axn1.shape,self.axn2.shape,self.axn3.shape,self.rotate(th.transpose( probe.unsqueeze(-3)*self.dimproj,self.co_axis_1,self.co_axis_2)[:,self.reverse_ind,...]).shape)
         return (self.rotate(th.transpose( probe.unsqueeze(-3)*self.dimproj,self.co_axis_1,self.co_axis_2)[:,self.reverse_ind,...])*self.axn1
                 *self.axn1*self.axn2*self.axn3)
                 # *self.axn2*self.axn3[])
