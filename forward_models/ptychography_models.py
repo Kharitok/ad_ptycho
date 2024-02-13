@@ -122,6 +122,8 @@ class PtychographyModelTransmission(th.nn.Module):
             self.Probe = ProbeDoubleRealShotToShotVariable(**probe_params)
         elif probe_type =='ProbeComplexShotToShotVariable_coherent':
             self.Probe = ProbeComplexShotToShotVariable_coherent(**probe_params)
+        elif probe_type == 'ProbeComplexShotToShotConstant_variable_int':
+            self.Probe = ProbeComplexShotToShotConstant_variable_int(**probe_params)
         else:
             raise ValueError("Unknown probe_type")
 
@@ -228,6 +230,8 @@ class PtychographyModelTransmissionSupported(th.nn.Module):
             self.Probe = ProbeComplexShotToShotVariable_coherent(**probe_params)
         elif probe_type == 'ProbeComplexShotToShotVariable_coherent_incoherent':
             self.Probe = ProbeComplexShotToShotVariable_coherent_incoherent(**probe_params)
+        elif probe_type == 'ProbeComplexShotToShotConstant_variable_int':
+            self.Probe = ProbeComplexShotToShotConstant_variable_int(**probe_params)
         else:
             raise ValueError("Unknown probe_type")
 
