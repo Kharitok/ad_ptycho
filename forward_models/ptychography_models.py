@@ -135,6 +135,8 @@ class PtychographyModelTransmission(th.nn.Module):
             self.Sample = SampleVariableThickness(**sample_params)
         elif sample_type == 'refractive_constrained':
             self.Sample = SampleRefractiveConstrained(**sample_params)
+        elif sample_type == 'refractive_constrained_split':
+            self.Sample = SampleRefractiveConstrained_split(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
 
