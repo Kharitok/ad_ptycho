@@ -131,7 +131,8 @@ class SampleRefractiveConstrained_split(th.nn.Module):
     def forward(self):
         """Returns transfer function of the sample"""
         #return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
-        return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)
+        # return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)
+        return th.sigmoid(self.sample_trans)*th.exp(1j*self.sample_phase)
     
 
     def get_transmission_and_pase(self):
@@ -139,6 +140,10 @@ class SampleRefractiveConstrained_split(th.nn.Module):
         trans = th.exp(-1 * th.exp(self.sample_trans.detach().cpu()))
         phase = self.sample_phase.detach().cpu()
         return (trans, phase)
+
+
+
+
 
 
 
@@ -153,6 +158,43 @@ import torch.nn as nn
 
 def thresh(x,a=0.3):
     return (1+th.tanh(x/a))
+
+
+class Sample_binary(th.nn.Module):
+    """Binary sample to reconstruct diffuser"""
+
+    def __init__(self, trans,phase,sample_size=None, init_sample=None,):
+        super().__init__()
+
+        if (sample_size is None) and (init_sample is None):
+            raise ValueError("Either sample_size or init_sample should be given")
+        elif init_sample is not None:
+            
+            self.trans = trans
+            self.phase = phase
+
+            self.sample_thick = nn.Parameter(th.from_numpy(phase).float())
+
+            
+        else:
+            # self.sample = nn.Parameter(th.zeros(sample_size, dtype=th.complex64)-5j)# for having ~ 1.0 sample
+            # self.sample_trans = nn.Parameter(th.from_numpy(imag).float())
+            # self.sample_phaser = nn.Parameter(th.from_numpy(phase).float())
+            raise(ValueError)
+
+    def forward(self):
+        """Returns transfer function of the sample"""
+        #return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
+        return (1+0j) - (self.sample_trans* thresh(self.sample_trans))
+    
+
+    def get_transmission_and_pase(self):
+        """Returns transmission and phase of the sample"""
+        trans = th.exp(-1 * th.exp(self.sample_trans.detach().cpu()))
+        phase = self.sample_phase.detach().cpu()
+        return (trans, phase)
+
+
 
 
 class Sample_point_approximator(th.nn.Module):
