@@ -156,6 +156,8 @@ def thresh(x,a=0.3):
 import torch.nn as nn
 
 
+
+
 def thresh(x,a=0.3):
     return (1+th.tanh(x/a))
 
@@ -163,17 +165,18 @@ def thresh(x,a=0.3):
 class Sample_binary(th.nn.Module):
     """Binary sample to reconstruct diffuser"""
 
-    def __init__(self, trans,phase,sample_size=None, init_sample=None,):
+    def __init__(self, trans,phase,sample_size=None, init_sample=None,a_thresh =1):
         super().__init__()
 
         if (sample_size is None) and (init_sample is None):
             raise ValueError("Either sample_size or init_sample should be given")
         elif init_sample is not None:
             
-            self.trans = trans
-            self.phase = phase
+            self.trans_max = trans
+            self.phase_max = phase
+            self.a = a_thresh
 
-            self.sample_thick = nn.Parameter(th.from_numpy(phase).float())
+            self.sample_trans = nn.Parameter(th.from_numpy(init_sample).float())
 
             
         else:
@@ -185,14 +188,10 @@ class Sample_binary(th.nn.Module):
     def forward(self):
         """Returns transfer function of the sample"""
         #return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
-        return (1+0j) - (self.sample_trans* thresh(self.sample_trans))
-    
 
-    def get_transmission_and_pase(self):
-        """Returns transmission and phase of the sample"""
-        trans = th.exp(-1 * th.exp(self.sample_trans.detach().cpu()))
-        phase = self.sample_phase.detach().cpu()
-        return (trans, phase)
+        
+        return (1 - thresh(self.sample_trans,a=self.a)/2*self.trans_max)*th.exp(1j*thresh(self.sample_trans,a=self.a)/2*self.phase_max)
+
 
 
 
