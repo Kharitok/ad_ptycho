@@ -239,6 +239,7 @@ class LossEstimator:
         #         self.LSQ_rel = torch.nn.MSELoss(reduction="sum")
         self.PNL_usual = th.nn.PoissonNLLLoss(log_input=False)
         self.PNL_log = th.nn.PoissonNLLLoss(log_input=True)
+        self.L1_loss = th.nn.L1Loss()
 
     def __call__(self, Approx, Measured, mode="LSQ", Mask=None,sigma_masked=None):
         if not (Mask is None):
@@ -265,6 +266,8 @@ class LossEstimator:
             return (((Measured-Approx)/(th.sqrt(Measured)+1e-7))**2).mean()
         elif mode == "Pu_Ga":
             return (th.log(Approx+sigma_masked+1e-7)+ ((Measured-Approx)**2)/(Approx+sigma_masked+1e-7)).mean()
+        elif mode == "L1":
+            return ( self.L1_loss(Approx, Measured))
         else:
             raise ValueError("Unknown mode")
 

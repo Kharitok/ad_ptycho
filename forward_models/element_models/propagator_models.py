@@ -119,6 +119,9 @@ class PropagatorFresnelSingleTransformFLuxPreserving(th.nn.Module):
         self.register_buffer("mul2_inv", mul2_inv.cfloat())
 
         self.num = pixel_num
+        self.z = z
+        self.pixel_size = pixel_size
+
 
     def forward(self, X):
         """Performs forward propagation"""
