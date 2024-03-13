@@ -5,9 +5,10 @@ Contains propagators required for the AD-based ptychography
 # import torch.nn as nn
 import torch as th
 import torch.fft as th_fft
+import numpy as np
 # from torch.utils.data import Dataset, DataLoader
 
-th.pi = th.acos(th.zeros(1)).item() * 2  # which is 3.1415927410125732
+th.pi = np.pi  # which is 3.1415927410125732
 # th.backends.cudnn.benchmark = True
 
 # ___________Fourrier transform staff___________
@@ -158,99 +159,99 @@ class PropagatorFraunhFluxPreserving(th.nn.Module):
 
 
 
-class PropagatorRSIR(th.nn.Module):
-    """
+# class PropagatorRSIR(th.nn.Module):
+#     """
    
-    Rayleigh–Sommerfeld impulse responce propagation 
-    better for longer distances
-    Δx <= λz/L
-    """
+#     Rayleigh–Sommerfeld impulse responce propagation 
+#     better for longer distances
+#     Δx <= λz/L
+#     """
 
-    def __init__(
-        self,
-        pixel_num,
-        pix_size,
-        wavelength,
-        z,
-    ):
-        super().__init__()
+#     def __init__(
+#         self,
+#         pixel_num,
+#         pix_size,
+#         wavelength,
+#         z,
+#     ):
+#         super().__init__()
 
-        self.num = pixel_num
-        self.pix_size = pix_size
-        self.wavelength = wavelength
-        self.z = z
-        self.k = 2*th.pi/wavelength
+#         self.num = pixel_num
+#         self.pix_size = pix_size
+#         self.wavelength = wavelength
+#         self.z = z
+#         self.k = 2*th.pi/wavelength
 
   
 
-        xx, yy = grid(self.num, self.pix_size)
+#         xx, yy = grid(pixel_size=self.pix_size,pixel_num=self.num)
 
 
-        h = (self.z/(1j*self.wavelength)) * ((th.exp(1j*self.k*th.sqrt(self.z**2+xx**2+yy**2)))/(self.z**2+xx**2+yy**2))
-        H = th_ff(h)*self.pix_size**2
+#         h = (self.z/(1j*self.wavelength)) * ((th.exp(1j*self.k*th.sqrt(self.z**2+xx**2+yy**2)))/(self.z**2+xx**2+yy**2))
+#         H = th_ff(h)*self.pix_size**2
 
-        h_i = (-self.z/(1j*self.wavelength)) * ((th.exp(1j*self.k*th.sqrt(-self.z**2+xx**2+yy**2)))/(-self.z**2+xx**2+yy**2))
-        H_i =  th_ff(h_i)*self.pix_size**2
+#         h_i = (-self.z/(1j*self.wavelength)) * ((th.exp(1j*self.k*th.sqrt(-self.z**2+xx**2+yy**2)))/(-self.z**2+xx**2+yy**2))
+#         H_i =  th_ff(h_i)*self.pix_size**2
 
 
-        self.register_buffer("H", H.cfloat())
-        self.register_buffer("H_i", H_i.cfloat())
+#         self.register_buffer("H", H.cfloat())
+#         self.register_buffer("H_i", H_i.cfloat())
 
    
-    def forward(self, X):
-        """Performs forward propagation"""
-        return th_iff(th_ff(X) * self.H)
+#     def forward(self, X):
+#         """Performs forward propagation"""
+#         return th_iff(th_ff(X) * self.H)
     
-    def inverse(self, X):
-        """Performs inverse propagation"""
-        return th_iff(th_ff(X) * self.H_i)
+#     def inverse(self, X):
+#         """Performs inverse propagation"""
+#         return th_iff(th_ff(X) * self.H_i)
     
 
-class PropagatorRSTF(th.nn.Module):
-    """
+# class PropagatorRSTF(th.nn.Module):
+#     """
    
-    Rayleigh–Sommerfeld transfer function propagation 
-    better for shorter  distances
-    Δx >= λz/L
-    """
+#     Rayleigh–Sommerfeld transfer function propagation 
+#     better for shorter  distances
+#     Δx >= λz/L
+#     """
 
-    def __init__(
-        self,
-        pixel_num,
-        pix_size,
-        wavelength,
-        z,
-    ):
-        super().__init__()
+#     def __init__(
+#         self,
+#         pixel_num,
+#         pix_size,
+#         wavelength,
+#         z,
+#     ):
+#         super().__init__()
 
-        self.num = pixel_num
-        self.pix_size = pix_size
-        self.wavelength = wavelength
-        self.z = z
-        self.k = 2*th.pi/wavelength
+#         self.num = pixel_num
+#         self.pix_size = pix_size
+#         self.wavelength = wavelength
+#         self.z = z
+#         self.k = 2*th.pi/wavelength
 
   
 
 
 
 
-        fx,fy = freq_grid(self.pix_size,self.num)
+#         fx,fy = freq_grid(pixel_num=self.num,pixel_size=self.pix_size)
 
-        H = th.exp(2j*th.pi*self.z*th.sqrt(1- (self.wavelength*fx )**2 - (self.wavelength*fy)**2)/self.wavelength)
-        H_i = th.exp(2j*th.pi*-self.z*th.sqrt(1- (self.wavelength*fx )**2 - (self.wavelength*fy)**2)/self.wavelength)
+#         H = th.exp(2j*th.pi*self.z*th.sqrt(1- (self.wavelength*fx )**2 - (self.wavelength*fy)**2)/self.wavelength)
+#         H_i = th.exp(2j*th.pi*-self.z*th.sqrt(1- (self.wavelength*fx )**2 - (self.wavelength*fy)**2)/self.wavelength)
 
 
-        self.register_buffer("H", H.cfloat())
-        self.register_buffer("H_i", H_i.cfloat())
+#         self.register_buffer("H", H.cfloat())
+#         self.register_buffer("H_i", H_i.cfloat())
 
    
-    def forward(self, X):
-        """Performs forward propagation"""
-        return th_iff(th_ff(X) * self.H)
+#     def forward(self, X):
+#         """Performs forward propagation"""
+#         return th_iff(th_ff(X) * self.H)
     
-    def inverse(self, X):
-        """Performs inverse propagation"""
-        return th_iff(th_ff(X) * self.H_i)
+#     def inverse(self, X):
+#         """Performs inverse propagation"""
+#         return th_iff(th_ff(X) * self.H_i)
     
 
 
@@ -276,15 +277,28 @@ class PropagatorFIR(th.nn.Module):
     ):
         super().__init__()
 
+
+        # k= self.k
+        # lm=self.wavel
+        # x,y =self.grid()
+        # dx= self.cell
+        # #np.exp(1j*k*z)
+        # h = (1/(1j*lm*z)) * np.exp(((1j*k)/(2*z))*(x**2+y**2))
+        # H = ff(h)*dx**2
+
+
+
         self.num = pixel_num
         self.pix_size = pix_size
         self.wavelength = wavelength
         self.z = z
         self.k = 2*th.pi/wavelength
 
+
+
   
 
-        xx, yy = grid(self.num, self.pix_size)
+        xx, yy = grid(pixel_size=self.pix_size,pixel_num=self.num)
 
 
         h = (1/(1j* self.wavelength*self.z)) * th.exp(((1j*self.k)/(2* self.z))*(xx**2+yy**2))
@@ -333,7 +347,7 @@ class PropagatorFTF(th.nn.Module):
 
   
 
-        fx,fy = freq_grid(self.pix_size,self.num)
+        fx,fy = xx, yy = grid(pixel_size=self.pix_size,pixel_num=self.num)
 
 
         H = th.exp((-1j*th.pi*self.wavelength*self.z)*(fx**2 +fy**2))
