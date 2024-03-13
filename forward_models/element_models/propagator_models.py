@@ -199,11 +199,11 @@ class PropagatorRSIR(th.nn.Module):
    
     def forward(self, X):
         """Performs forward propagation"""
-        return th_iff(th_ff(self.field) * self.H)
+        return th_iff(th_ff(X) * self.H)
     
     def inverse(self, X):
         """Performs inverse propagation"""
-        return th_iff(th_ff(self.field) * self.H_i)
+        return th_iff(th_ff(X) * self.H_i)
     
 
 class PropagatorRSTF(th.nn.Module):
@@ -246,11 +246,11 @@ class PropagatorRSTF(th.nn.Module):
    
     def forward(self, X):
         """Performs forward propagation"""
-        return th_iff(th_ff(self.field) * self.H)
+        return th_iff(th_ff(X) * self.H)
     
     def inverse(self, X):
         """Performs inverse propagation"""
-        return th_iff(th_ff(self.field) * self.H_i)
+        return th_iff(th_ff(X) * self.H_i)
     
 
 
@@ -300,11 +300,11 @@ class PropagatorFIR(th.nn.Module):
    
     def forward(self, X):
         """Performs forward propagation"""
-        return th_iff(th_ff(self.field) * self.H)
+        return th_iff(th_ff(X) * self.H)
     
     def inverse(self, X):
         """Performs inverse propagation"""
-        return th_iff(th_ff(self.field) * self.H_i)
+        return th_iff(th_ff(X) * self.H_i)
     
 
 
@@ -346,8 +346,8 @@ class PropagatorFTF(th.nn.Module):
    
     def forward(self, X):
         """Performs forward propagation"""
-        return th_iff(th_ff(self.field) * self.H)
+        return th_iff(th_ff(X) * self.H)
     
     def inverse(self, X):
         """Performs inverse propagation"""
-        return th_iff(th_ff(self.field) * self.H_i)
+        return th_iff(th_ff(X) * self.H_i)
