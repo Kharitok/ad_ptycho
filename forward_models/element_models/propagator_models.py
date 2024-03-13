@@ -347,7 +347,7 @@ class PropagatorFTF(th.nn.Module):
 
   
 
-        fx,fy = xx, yy = grid(pixel_size=self.pix_size,pixel_num=self.num)
+        fx,fy = freq_grid(pixel_size = self.pix_size, pixel_num=self.num)
 
 
         H = th.exp((-1j*th.pi*self.wavelength*self.z)*(fx**2 +fy**2))
