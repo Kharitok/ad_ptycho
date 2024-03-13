@@ -234,7 +234,7 @@ class PropagatorRSTF(th.nn.Module):
 
 
 
-        fx,fy = self.freq_grid(self.pix_size,self.num)
+        fx,fy = freq_grid(self.pix_size,self.num)
 
         H = th.exp(2j*th.pi*self.z*th.sqrt(1- (self.wavelength*fx )**2 - (self.wavelength*fy)**2)/self.wavelength)
         H_i = th.exp(2j*th.pi*-self.z*th.sqrt(1- (self.wavelength*fx )**2 - (self.wavelength*fy)**2)/self.wavelength)
@@ -333,7 +333,7 @@ class PropagatorFTF(th.nn.Module):
 
   
 
-        fx,fy = self.freq_grid(self.pix_size,self.num)
+        fx,fy = freq_grid(self.pix_size,self.num)
 
 
         H = th.exp((-1j*th.pi*self.wavelength*self.z)*(fx**2 +fy**2))
