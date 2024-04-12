@@ -1,7 +1,7 @@
 """
 Contains propagators required for the AD-based ptychography
 """
-# import torch.nn.functional as F
+import torch.nn.functional as F
 # import torch.nn as nn
 import torch as th
 import torch.fft as th_fft
