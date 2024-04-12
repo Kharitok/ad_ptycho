@@ -6,6 +6,13 @@ Contains propagators required for the AD-based ptychography
 import torch as th
 import torch.fft as th_fft
 import numpy as np
+from torch.fft import (
+    fftshift as fftshift_t,
+    ifftshift as ifftshift_t,
+    fftn as fftn_t,
+    ifftn as ifftn_t,
+    fftfreq as fftfreq_t,
+)
 # from torch.utils.data import Dataset, DataLoader
 
 th.pi = np.pi  # which is 3.1415927410125732
@@ -27,6 +34,14 @@ def th_iff(field):
         th_fft.ifft2(th_fft.ifftshift(field, dim=(-1, -2)), norm="backward"), dim=(-1, -2)
     )
 
+def fftnd_t(X: th.Tensor, n: int) -> th.Tensor:
+    """1d FFT on a tensor using torch.fft"""
+    return fftshift_t(fftn_t(ifftshift_t(X, dim=n), dim=n, norm="ortho"), dim=n)
+
+
+def ifftnd_t(X, n):
+    """1d FFT on a tensor using torch.fft"""
+    return fftshift_t(ifftn_t(ifftshift_t(X, dim=n), dim=n, norm="ortho"), dim=n)
 
 # ___________Misc functions for propagators construction___________
 
@@ -153,6 +168,35 @@ class PropagatorFraunhFluxPreserving(th.nn.Module):
         """Performs inverse propagation"""
         return th_iff(X) * self.num
 
+
+
+
+
+
+def pad2_(x:th.Tensor,width):
+    # width = x.shape[-1]//2
+    return F.pad(x,(width,width,width,width),mode='constant',value=0)
+
+def upsamp_f_(x:th.Tensor,width):
+    return ifftnd_t(pad2_(fftnd_t(x,(-1,-2)),width),(-1,-2))
+
+
+class PropagatorFraunhUpsampFluxPreserving(th.nn.Module):
+    """
+    Performs upsampled fraunhoffer propagation to the detector plane
+    """
+
+    def __init__(
+        self,
+        pixel_num,
+    ):
+        super().__init__()
+        self.width = pixel_num//2
+        self.w3 = self.width*3
+
+    def forward(self, beam,diff):
+        """Performs forward propagation"""
+        return fftnd_t(upsamp_f_(beam,self.width)*upsamp_f_(diff,self.width),(-1,-2))[self.width:self.w3,self.width:self.w3]*2
 
 
 
