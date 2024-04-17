@@ -196,7 +196,7 @@ class PropagatorFraunhUpsampFluxPreserving(th.nn.Module):
 
     def forward(self, beam,diff):
         """Performs forward propagation"""
-        return fftnd_t(upsamp_f_(beam,self.width)*upsamp_f_(diff,self.width),(-1,-2))[self.width:self.w3,self.width:self.w3]*2
+        return fftnd_t(upsamp_f_(beam,self.width)*upsamp_f_(diff,self.width),(-1,-2))[...,self.width:self.w3,self.width:self.w3]*2
 
 
 
