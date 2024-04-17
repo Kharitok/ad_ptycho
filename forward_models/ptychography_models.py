@@ -34,6 +34,7 @@ from .element_models.sample_models import (
 from .element_models.propagator_models import (
     PropagatorFraunhFluxPreserving,
     PropagatorFresnelSingleTransformFLuxPreserving,
+    PropagatorFraunhUpsampFluxPreserving,
 )
 
 from .element_models.shifter_models import (
@@ -164,6 +165,10 @@ class PtychographyModelTransmission(th.nn.Module):
             self.Propagator = PropagatorFresnelSingleTransformFLuxPreserving(
                 **propagator_params
             )
+        elif propagator_type == "Fraunhofer_upsampling":
+            self.Propagator = PropagatorFraunhUpsampFluxPreserving(
+                **propagator_params
+            )
         else:
             raise ValueError("Unknown propagator_type")
 
@@ -175,6 +180,17 @@ class PtychographyModelTransmission(th.nn.Module):
         return self.Propagator(
             self.Shifter(self.Sample(), scan_numbers)[:, None, :, :]
             * self.Probe(scan_numbers)
+        )
+    
+
+    def forward_upsampling(self, scan_numbers):
+        """Estimate the measured diffraction patterns for corresponding scan numbers with upsampling propagator"""
+        #         print("Sample", self.Sample().shape)
+        #         print("Probe", self.Probe(scan_numbers).shape)
+        #         print("scan_numbers", scan_numbers.shape)
+        return self.Propagator(self.Probe(scan_numbers),
+            self.Shifter(self.Sample(), scan_numbers)[:, None, :, :]
+            
         )
 
     
