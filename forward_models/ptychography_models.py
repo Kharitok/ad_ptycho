@@ -144,7 +144,7 @@ class PtychographyModelTransmission(th.nn.Module):
             self.Sample = SampleRefractiveConstrained_split(**sample_params)
         elif sample_type == 'Sample_binary':
             self.Sample = Sample_binary(**sample_params)
-        elif sample_type == 'SampleRefractiveConvolutional'(**sample_params):
+        elif sample_type == 'SampleRefractiveConvolutional':
             self.Sample = SampleRefractiveConstrained_split_conv(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
