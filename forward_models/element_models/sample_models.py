@@ -167,7 +167,7 @@ class SampleRefractiveConstrained_split_conv(th.nn.Module):
             # self.sample_phaser = nn.Parameter(th.from_numpy(phase).float())
             raise(ValueError)
         
-        self.filter = nn.Parameter(th.from_numpy(filter).float())
+        self.filter = nn.Parameter(th.from_numpy(filter))
 
     def forward(self):
         """Returns transfer function of the sample"""
