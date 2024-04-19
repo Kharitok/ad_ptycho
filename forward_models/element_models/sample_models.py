@@ -173,7 +173,7 @@ class SampleRefractiveConstrained_split_conv(th.nn.Module):
         """Returns transfer function of the sample"""
         #return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
         # return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)
-        return th.nn.functional.conv2d((th.sigmoid(self.sample_trans)*th.exp(1j*self.sample_phase))[None,None,...],self.filter[None,None,...],padding ='same')
+        return th.nn.functional.conv2d((th.sigmoid(self.sample_trans)*th.exp(1j*self.sample_phase))[None,None,...],self.filter[None,None,...],padding ='same')[0,0,...]
     # sample[None,None,...],kernel[None,None,...],padding ='same',
 
     def get_transmission_and_pase(self):
