@@ -28,7 +28,8 @@ from .element_models.sample_models import (
     SampleRefractiveConstrained,
     SampleRefractiveConstrained_split,
     Sample_point_approximator,
-    Sample_binary
+    Sample_binary,
+    SampleRefractiveConstrained_split_conv
 )
 
 from .element_models.propagator_models import (
@@ -143,6 +144,8 @@ class PtychographyModelTransmission(th.nn.Module):
             self.Sample = SampleRefractiveConstrained_split(**sample_params)
         elif sample_type == 'Sample_binary':
             self.Sample = Sample_binary(**sample_params)
+        elif sample_type == 'SampleRefractiveConvolutional'(**sample_params):
+            self.Sample = SampleRefractiveConstrained_split_conv(**sample_params)
         else:
             raise ValueError("Unknown sample_type")
 

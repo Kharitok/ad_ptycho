@@ -108,6 +108,7 @@ class SampleRefractiveConstrained(th.nn.Module):
         phase = th.real(self.sample.detach().cpu())
         return (trans, phase)
     
+    # torch.nn.functional.conv2d(sample[None,None,...],kernel[None,None,...],padding ='same',)
 class SampleRefractiveConstrained_split(th.nn.Module):
     """Refractive sample model implemented as complex tensor"""
 
@@ -134,6 +135,46 @@ class SampleRefractiveConstrained_split(th.nn.Module):
         # return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)
         return th.sigmoid(self.sample_trans)*th.exp(1j*self.sample_phase)
     
+
+    def get_transmission_and_pase(self):
+        """Returns transmission and phase of the sample"""
+        trans = th.exp(-1 * th.exp(self.sample_trans.detach().cpu()))
+        phase = self.sample_phase.detach().cpu()
+        return (trans, phase)
+
+
+
+class SampleRefractiveConstrained_split_conv(th.nn.Module):
+    """Refractive sample model with convolutional fitting"""
+
+    def __init__(self, filter,sample_size=None, init_sample=None,):
+        super().__init__()
+
+        if (sample_size is None) and (init_sample is None):
+            raise ValueError("Either sample_size or init_sample should be given")
+        elif init_sample is not None:
+            trans = np.abs(init_sample)
+            inv_sig = -np.log(1/trans-1) 
+            phase = np.angle(init_sample)# wrapping is here but so far we don't care
+
+            self.register_buffer("sample_trans", th.from_numpy(inv_sig).float().data)
+            self.register_buffer("sample_phase",th.from_numpy(phase).float().data)
+            # self.sample_trans = nn.Parameter(th.from_numpy(inv_sig).float())
+            # self.sample_phase = nn.Parameter(th.from_numpy(phase).float())
+        else:
+            # self.sample = nn.Parameter(th.zeros(sample_size, dtype=th.complex64)-5j)# for having ~ 1.0 sample
+            # self.sample_trans = nn.Parameter(th.from_numpy(imag).float())
+            # self.sample_phaser = nn.Parameter(th.from_numpy(phase).float())
+            raise(ValueError)
+        
+        self.filter = nn.Parameter(th.from_numpy(filter).float())
+
+    def forward(self):
+        """Returns transfer function of the sample"""
+        #return th.exp(1j * (th.real(self.sample) +th.exp(th.imag(self.sample))))
+        # return th.sigmoid(self.sample_trans)*th.exp(2j*th.pi*self.sample_phase)
+        return th.nn.functional.conv2d((th.sigmoid(self.sample_trans)*th.exp(1j*self.sample_phase))[None,None,...],self.filter[None,None,...],padding ='same')
+    # sample[None,None,...],kernel[None,None,...],padding ='same',
 
     def get_transmission_and_pase(self):
         """Returns transmission and phase of the sample"""
