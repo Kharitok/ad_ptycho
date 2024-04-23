@@ -42,114 +42,102 @@ def load_model(filename,to_cpu = True):
 
 
 
-def train(
-    model,
-    optimizer,
-    data_loader,
-    epoch_num,
-    report_interval,
-    backup_interval,
-    early_stopping,
-    measured_data,
-    mismatch_estimator,
-    mask,
-    savepath,
-    regularization_params,
-    name=''
-):
-    """ "Perform the reconstruction for predifined number of iterations with params"""
+def fit(Epoch_num,
+          optimizer,
+          data_loader,
+          Measured_data,
+          forward_model,
+          report_interval =1,
+          early_stopping = 1e-10,
+          pre_iter_hook= lambda x:None,
+          post_iter_hook= lambda x:None,
+          forward_computation = lambda x:None,
+          loss_computation = lambda x:None,
+
+          ):
+    """Performs reconstruction
+
+    Args:
+        Epoch_num (int): number of total epochs
+        optimizer (torch.optim object): optimizer to use
+        data_loader (iterable): data loader
+        Measured_data (dict): measured data
+        forward_model (torch.nn.Module): forward model
+        report_interval (int, optional): report interval. Defaults to 1.
+        early_stopping (float, optional): stoping criterion. Defaults to 1e-10.
+        pre_iter_hook (function, optional): function to call before each iteration. Defaults to lambda x:None.
+        post_iter_hook (function, optional): function to call after each iteration. Defaults to lambda x:None.
+        forward_computation (function, optional): function to compute forward model output. Defaults to lambda x:None.
+        loss_computation (function, optional): function to compute loss. Defaults to lambda x:None.
+
+    Returns:
+        dict: dictionary containing optimizer, reconstruction_summary and model
+    """
+
+    err_long =np.zeros((Epoch_num,len(data_loader)))
+
+    num_bunch = len(data_loader)
     reconstruction_summary = {}
     reconstruction_summary["start_time"] = time.time()
-    reconstruction_summary["error"] = [None] * epoch_num
+    reconstruction_summary["error"] = []
+    # print(err_long.shape)
 
-    regularization_estimator = get_regularization_estimator(regularization_params)
 
-    def local_loss(
-        model_output,
-        noise,
-        model,
-    ):
-        loss = mismatch_estimator(
-            Approx=model_output + noise,
-            Measured=measured_batch,
-            Mask=mask,
-            mode="PNL",
-        ) + regularization_estimator(model, model_output, mask)
+    total_iter_num = 0
+    for epoch in range(Epoch_num):  # global iterations
+        for data_id in data_loader:
 
-        return loss
+            total_iter_num += 1
+            
 
-    for epoch in range(epoch_num):
-        # iterate through the dataloader to process next minibatch
-        for data in data_loader:
-            # zero gradients
+            with th.no_grad():#apply pre-iteration hooks
+                pre_iter_hook(forward_model)
+
             optimizer.zero_grad(set_to_none=True)
 
-            # estimate diffraction with forward model
-            model_output, noise = model(data)
-            measured_batch = measured_data[data, ...]
+            model_output = forward_computation(forward_model)
+            Measured_batch = Measured_data[data_id]
 
-            # calculate loss
-            loss = local_loss(model_output,noise,model)
-            # loss = (
-            #     mismatch_estimator(
-            #         Approx=model_output + noise,
-            #         Measured=measured_batch,
-            #         Mask=mask,
-            #         mode="PNL",
-            #     )
-            #     + l1_norm_reg(model_output * (1.0 - mask), a1=2e-2, a2=0)
-            #     # +l1_norm_refractive_reg(Reconstruction_model_gpu.Sample.sample,1,0)
-            #     # +L1(Reconstruction_model_gpu.Sample.sample,a1=0,a2=1e-1)
-            #     # +total_variation_reg(Reconstruction_model_gpu.Probe.probe,1e-3,0)
-            #     #    +total_variation_refractive_reg(Reconstruction_model_gpu.Sample.sample,1e-1,5e-8)
-            # )
 
-            # backward and optimizer step
+            loss = loss_computation(model_output,forward_model)
+            err_long[epoch,total_iter_num%num_bunch] = loss.item()
             loss.backward()
+
+            with th.no_grad():
+                post_iter_hook(forward_model)
+
             optimizer.step()
 
-            # save minibatch error
-            reconstruction_summary["error"][epoch] = loss.item()
 
-        # print current stat
-        if epoch % report_interval == 0:
-            print("\r", epoch, reconstruction_summary["error"][epoch], "||", end="")
-            if reconstruction_summary["error"][epoch] < early_stopping:
-                print("EARLY STOPPING REACHED")
-                break
 
-        if (epoch) % backup_interval == 0:
-            save_reconstruction_results(
-                model_to_save=model,
-                optimizer=optimizer,
-                reconstruction_summary=reconstruction_summary,
-                name=f'{name} E ={np.round(reconstruction_summary["error"][epoch],3)}',
-                path=savepath,
-            )
+            if epoch % report_interval == 0:
+                print('\r',epoch, err_long[epoch].mean(), "||", end='')
+                if err_long[epoch].mean() <early_stopping:
+                    print('EARLY STOPPING REACHED')
+                    
+                    plt.figure()
+                    plt.plot(reconstruction_summary["error"])
+                    plt.title("Reconstruction error")
+                    plt.show()
 
-    reconstruction_summary["end time"] = time.time()
-    time_of_reconstruction = (
-        reconstruction_summary["end time"] - reconstruction_summary["start_time"]
-    )
-    # Summarize
-    print(f"RECONSTRUCTION {name} IS FINISHED")
-    print(
-        f"Total {time_of_reconstruction}|   |{time_of_reconstruction/epoch_num} per"
-        " epoch"
-    )
+                    return {'Optimizer':optimizer,
+                            'reconstruction_summary':reconstruction_summary,
+                            'model':forward_model}
+
+                    
+
+    reconstruction_summary["end_time"] = time.time()
+    reconstruction_summary["error"] = err_long
+
+    print(f"RECONSTRUCTION IS FINISHED")
+    time_of_reconstruction = reconstruction_summary["end_time"]-reconstruction_summary["start_time"]
+    print(f"Total {time_of_reconstruction}|   |{time_of_reconstruction/Epoch_num} per epoch")
+
     plt.figure()
     plt.plot(reconstruction_summary["error"])
     plt.title("Reconstruction error")
     plt.show()
 
-    # Save final results
-
-    save_reconstruction_results(
-        model_to_save=model,
-        optimizer=optimizer,
-        reconstruction_summary=reconstruction_summary,
-        name=f'{name} FINAL E ={np.round(reconstruction_summary["error"][epoch],3)}',
-        path=savepath,
-    )
-
-    return (model, optimizer, reconstruction_summary)
+    return {'Optimizer':optimizer,
+            'reconstruction_summary':reconstruction_summary,
+            'model':forward_model}
