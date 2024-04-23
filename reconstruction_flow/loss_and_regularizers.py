@@ -245,8 +245,8 @@ class LossEstimator:
         self.L1_loss = th.nn.L1Loss()
 
 
-    def NMSE(Measured,Approx,eps = 1e-9):
-        return ((1/((Measured).sum())) *(((th.sqrt(Approx +eps) - th.sqrt(Measured+eps))**2).sum()))
+    def _nmse(measured,approx,eps = 1e-9):
+        return ((1/(measured.sum())) *(((th.sqrt(approx +eps) - th.sqrt(measured+eps))**2).sum()))
  
 
     def __call__(self, Approx, Measured, mode="LSQ", Mask=None,sigma_masked=None):
@@ -277,7 +277,7 @@ class LossEstimator:
         elif mode == "L1":
             return ( self.L1_loss(Approx, Measured))
         elif mode == "NMSE":
-            return self.NMSE(Measured = Measured, Approx = Approx)
+            return self._nmse(Measured = Measured, Approx = Approx)
         else:
             raise ValueError("Unknown mode")
 
