@@ -245,7 +245,7 @@ class LossEstimator:
         self.L1_loss = th.nn.L1Loss()
 
 
-    def _nmse(measured,approx,eps = 1e-9):
+    def _nmse(self,measured,approx,eps = 1e-9):
         return ((1/(measured.sum())) *(((th.sqrt(approx +eps) - th.sqrt(measured+eps))**2).sum()))
  
 
