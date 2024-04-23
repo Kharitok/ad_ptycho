@@ -277,7 +277,7 @@ class LossEstimator:
         elif mode == "L1":
             return ( self.L1_loss(Approx, Measured))
         elif mode == "NMSE":
-            return self._nmse(Measured = Measured, Approx = Approx)
+            return self._nmse(measured = Measured, approx = Approx)
         else:
             raise ValueError("Unknown mode")
 
