@@ -99,7 +99,7 @@ def fit(Epoch_num,
             Measured_batch = Measured_data[data_id]
 
 
-            loss = loss_computation(model_output,forward_model)
+            loss = loss_computation(model_output,forward_model,Measured_batch)
             err_long[epoch,total_iter_num%num_bunch] = loss.item()
             loss.backward()
 

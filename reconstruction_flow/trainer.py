@@ -84,15 +84,18 @@ class ReconstructionManager:
 
 
 
-def train(Epoch_num,forward_model,report_interval =1,
+def train(Epoch_num,
+          optimizer,
+          data_loader,
+          Measured_data,
+          forward_model,
+          report_interval =1,
           early_stopping = 1e-10,
           pre_iter_hook= lambda x:None,
           post_iter_hook= lambda x:None,
           forward_computation = lambda x:None,
           loss_computation = lambda x:None,
-          optimizer,
-          data_loader,
-          Measured_data,
+
           ):
 
     err_long =np.zeros((Epoch_num,len(data_loader)))
@@ -153,124 +156,124 @@ def train(Epoch_num,forward_model,report_interval =1,
 
 
 
-err_long= None
+# err_long= None
 
-Epoch_num = 10000
-report_interval = 1
-backup_interval = 10000
-early_stopping = -1e20
-stagnaniton_toll=1e-1
-last_stuck=0
-to_sw = False
-if err_long is None:
-    err_long = []
-    err_hist = []
+# Epoch_num = 10000
+# report_interval = 1
+# backup_interval = 10000
+# early_stopping = -1e20
+# stagnaniton_toll=1e-1
+# last_stuck=0
+# to_sw = False
+# if err_long is None:
+#     err_long = []
+#     err_hist = []
 
 
-reconstruction_summary = {}
-reconstruction_summary["start_time"] = time.time()
-reconstruction_summary["error"] = []
+# reconstruction_summary = {}
+# reconstruction_summary["start_time"] = time.time()
+# reconstruction_summary["error"] = []
 
-for epoch in range(Epoch_num):  # global iterations
+# for epoch in range(Epoch_num):  # global iterations
     
-        with th.no_grad():
-            # probe_g.probe *= support[None,...]
-            probe_guess.probe *= sup_f[None,...]
+#         with th.no_grad():
+#             # probe_g.probe *= support[None,...]
+#             probe_guess.probe *= sup_f[None,...]
             
-            pass
+#             pass
 
-        # zero gradients
-        optimizer.zero_grad(set_to_none=True)
+#         # zero gradients
+#         optimizer.zero_grad(set_to_none=True)
 
-        # estimate diffraction with forward model
+#         # estimate diffraction with forward model
 
-        # model_output =  th.sqrt( th.sum(th.abs( prop_ff(modulator*prop_nf(probe_g([0])) ))**2,axis=1))[0]
-        # model_output =  th.sqrt( th.sum(th.abs( prop_ff(modulator*ifftnd_t(probe_g([0]),(-1,-2)) ))**2,axis=1))[0]
-        # model_output = ( th.abs(prop_ff(ifftnd_t(probe_guess.probe[0],(-1,-2))*modulator)))**2
-        model_output = ( th.abs(prop_ff(ifftnd_t(probe_guess.probe[0],(-1,-2))*modulator)))
-        # model_output =  th.sum(th.abs( prop_ff(modulator*prop_nf(ifftnd_t(probe_g([0]),(-1,-2)) )))**2,axis=1)[0]
-        # model_output =  th.sum(th.abs( prop_ff(modulator*ifftnd_t(probe_g([0]),(-1,-2)) ))**2,axis=1)[0]
-#         noise = additive_noise.get_gaussian()#
-        Measured_batch = Measured_data[0]
+#         # model_output =  th.sqrt( th.sum(th.abs( prop_ff(modulator*prop_nf(probe_g([0])) ))**2,axis=1))[0]
+#         # model_output =  th.sqrt( th.sum(th.abs( prop_ff(modulator*ifftnd_t(probe_g([0]),(-1,-2)) ))**2,axis=1))[0]
+#         # model_output = ( th.abs(prop_ff(ifftnd_t(probe_guess.probe[0],(-1,-2))*modulator)))**2
+#         model_output = ( th.abs(prop_ff(ifftnd_t(probe_guess.probe[0],(-1,-2))*modulator)))
+#         # model_output =  th.sum(th.abs( prop_ff(modulator*prop_nf(ifftnd_t(probe_g([0]),(-1,-2)) )))**2,axis=1)[0]
+#         # model_output =  th.sum(th.abs( prop_ff(modulator*ifftnd_t(probe_g([0]),(-1,-2)) ))**2,axis=1)[0]
+# #         noise = additive_noise.get_gaussian()#
+#         Measured_batch = Measured_data[0]
 
-        # calculate loss
-        loss = ( 
-            # Model_err(Approx=model_output, Measured=Measured_batch,  mode="LSQ",Mask = mask_det)
-            L_diffr(Measured =Measured_batch, Approx=model_output,mask =mask_det )
-            +1e-3*tv_2_reg(th.abs(probe_guess.probe[0]))
-            +1e-4*tv_2_reg(th.abs(ifftnd_t(probe_guess.probe[0],(-1,-2))))
-            +1e-3*l1_norm_reg(th.abs(ifftnd_t(probe_guess.probe[0],(-1,-2))))
-            # +1e-9*((~support_est)*th.abs(ifftnd_t(probe_guess.probe,(-1,-2)))).sum()
-            # +th.abs((~sup_f)*probe_guess.probe.detach()).sum()
-            # +1e-2*((~support_est)*th.abs(ifftnd_t(probe_g([0]),(-1,-2)))).sum()
-            # +1e-2*l1_norm_reg(th.abs(ifftnd_t(probe_guess.probe,(-1,-2)))**2)
-            # +1e-3*(th.abs(ifftnd_t(probe_guess.probe,(-1,-2)))*(~support_est)).sum()
-            # +3e-1*tv_2_reg(th.abs(ifftnd_t(probe_g([0]),(-1,-2))))
-            # +1e-4*((~support_2)*th.abs(prop_nf(probe_g([0])))).sum()
-            # +1e0*l1_norm_reg(th.abs(probe_g.probe))
+#         # calculate loss
+#         loss = ( 
+#             # Model_err(Approx=model_output, Measured=Measured_batch,  mode="LSQ",Mask = mask_det)
+#             L_diffr(Measured =Measured_batch, Approx=model_output,mask =mask_det )
+#             +1e-3*tv_2_reg(th.abs(probe_guess.probe[0]))
+#             +1e-4*tv_2_reg(th.abs(ifftnd_t(probe_guess.probe[0],(-1,-2))))
+#             +1e-3*l1_norm_reg(th.abs(ifftnd_t(probe_guess.probe[0],(-1,-2))))
+#             # +1e-9*((~support_est)*th.abs(ifftnd_t(probe_guess.probe,(-1,-2)))).sum()
+#             # +th.abs((~sup_f)*probe_guess.probe.detach()).sum()
+#             # +1e-2*((~support_est)*th.abs(ifftnd_t(probe_g([0]),(-1,-2)))).sum()
+#             # +1e-2*l1_norm_reg(th.abs(ifftnd_t(probe_guess.probe,(-1,-2)))**2)
+#             # +1e-3*(th.abs(ifftnd_t(probe_guess.probe,(-1,-2)))*(~support_est)).sum()
+#             # +3e-1*tv_2_reg(th.abs(ifftnd_t(probe_g([0]),(-1,-2))))
+#             # +1e-4*((~support_2)*th.abs(prop_nf(probe_g([0])))).sum()
+#             # +1e0*l1_norm_reg(th.abs(probe_g.probe))
 
-        )
+#         )
 
 
-        # maybe calculate some alternative metrics without gradients
-        with th.no_grad():
-            pass
-            # loss_rel = Model_err(
-            #     Approx=output, Measured=Measured_batch, Mask=None, mode="LSQ_rel"
-            # )
-            # err_rel.append(float(loss_rel.cpu()))
+#         # maybe calculate some alternative metrics without gradients
+#         with th.no_grad():
+#             pass
+#             # loss_rel = Model_err(
+#             #     Approx=output, Measured=Measured_batch, Mask=None, mode="LSQ_rel"
+#             # )
+#             # err_rel.append(float(loss_rel.cpu()))
 
-        # backward and optimizer step
-        loss.backward()
-        with th.no_grad():
-            # probe_g.probe.grad = probe_g.probe.grad*support[None,...]
-            probe_guess.probe.grad = probe_guess.probe.grad*sup_f[None,...]
-            pass
+#         # backward and optimizer step
+#         loss.backward()
+#         with th.no_grad():
+#             # probe_g.probe.grad = probe_g.probe.grad*support[None,...]
+#             probe_guess.probe.grad = probe_guess.probe.grad*sup_f[None,...]
+#             pass
             
-        optimizer.step()
+#         optimizer.step()
 
-        # save minibatch error
-        reconstruction_summary["error"].append((loss.item()))
+#         # save minibatch error
+#         reconstruction_summary["error"].append((loss.item()))
 
 
-        # print current stat
-        if epoch % report_interval == 0:
-            print('\r',epoch, reconstruction_summary["error"][-1], "||", end='')
-            if reconstruction_summary["error"][-1] <early_stopping:
-                print('EARLY STOPPING REACHED')
-                break
+#         # print current stat
+#         if epoch % report_interval == 0:
+#             print('\r',epoch, reconstruction_summary["error"][-1], "||", end='')
+#             if reconstruction_summary["error"][-1] <early_stopping:
+#                 print('EARLY STOPPING REACHED')
+#                 break
             
-            if to_sw and ( epoch - last_stuck) >100 and  (np.abs(reconstruction_summary["error"][-1]-np.mean(reconstruction_summary["error"][-20:-1]))<=stagnaniton_toll*np.mean(reconstruction_summary["error"][-20:-1]))and(epoch>last_stuck+100):
-                print('we stuck')
-                support = sw_sup(6,0.18)
-                last_stuck = epoch
+#             if to_sw and ( epoch - last_stuck) >100 and  (np.abs(reconstruction_summary["error"][-1]-np.mean(reconstruction_summary["error"][-20:-1]))<=stagnaniton_toll*np.mean(reconstruction_summary["error"][-20:-1]))and(epoch>last_stuck+100):
+#                 print('we stuck')
+#                 support = sw_sup(6,0.18)
+#                 last_stuck = epoch
 
-                l_probe  =5e-1#<=6e-3
-                l_modal_weights  =0#2e2
+#                 l_probe  =5e-1#<=6e-3
+#                 l_modal_weights  =0#2e2
 
-                optimizer = th.optim.Adam([
-                                        {'params': probe_g.probe,'lr':l_probe, 'weight_decay':0},# 
-                                        {'params': probe_g.modal_weights,'lr':l_modal_weights,'weight_decay':0},#
+#                 optimizer = th.optim.Adam([
+#                                         {'params': probe_g.probe,'lr':l_probe, 'weight_decay':0},# 
+#                                         {'params': probe_g.modal_weights,'lr':l_modal_weights,'weight_decay':0},#
 
-                                    ],weight_decay=0,lr=0)
-
-
+#                                     ],weight_decay=0,lr=0)
 
 
-# At the end of the reconstruction
-reconstruction_summary["end time"] = time.time()
-time_of_reconstruction = (
-    reconstruction_summary["end time"] - reconstruction_summary["start_time"]
-)
-# Summarize
-print(f"RECONSTRUCTION IS FINISHED")
-print(
-    f"Total {time_of_reconstruction}|   |{time_of_reconstruction/Epoch_num} per epoch"
-)
-plt.figure()
-plt.plot(reconstruction_summary["error"])
-plt.title("Reconstruction error")
-plt.show()
+
+
+# # At the end of the reconstruction
+# reconstruction_summary["end time"] = time.time()
+# time_of_reconstruction = (
+#     reconstruction_summary["end time"] - reconstruction_summary["start_time"]
+# )
+# # Summarize
+# print(f"RECONSTRUCTION IS FINISHED")
+# print(
+#     f"Total {time_of_reconstruction}|   |{time_of_reconstruction/Epoch_num} per epoch"
+# )
+# plt.figure()
+# plt.plot(reconstruction_summary["error"])
+# plt.title("Reconstruction error")
+# plt.show()
 
 
 
