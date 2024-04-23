@@ -221,6 +221,7 @@ class LossEstimator:
     https://doi.org/10.1364/OE.20.025914
     [2] Maximum-likelihood refinement for coherent diffractive imaging
     [3] Maximum-likelihood estimation in ptychography in the presence of Poisson-Gaussian noise statistics
+    [4] NMSE Single-frame far-field diffractive imaging with randomized illumination. 
 
     for LSQ it's better to use sqrt(I) rather than I [1]
     For PNL  I [2]
@@ -228,6 +229,8 @@ class LossEstimator:
     Pu_Ga and  Pu_Ga_without_sigma are  copied from [3] with sigma_masked being variance of the readout noise estimated from darks apriory and  masked accourdingly
 
     """
+
+
 
     def __init__(self, Mask=None):
         if Mask is not None:
@@ -240,6 +243,11 @@ class LossEstimator:
         self.PNL_usual = th.nn.PoissonNLLLoss(log_input=False)
         self.PNL_log = th.nn.PoissonNLLLoss(log_input=True)
         self.L1_loss = th.nn.L1Loss()
+
+
+    def NMSE(Measured,Approx,eps = 1e-9):
+        return ((1/((Measured).sum())) *(((th.sqrt(Approx +eps) - th.sqrt(Measured+eps))**2).sum()))
+ 
 
     def __call__(self, Approx, Measured, mode="LSQ", Mask=None,sigma_masked=None):
         if not (Mask is None):
@@ -268,6 +276,8 @@ class LossEstimator:
             return (th.log(Approx+sigma_masked+1e-7)+ ((Measured-Approx)**2)/(Approx+sigma_masked+1e-7)).mean()
         elif mode == "L1":
             return ( self.L1_loss(Approx, Measured))
+        elif mode == "NMSE":
+            return self.NMSE(Measured = Measured, Approx = Approx)
         else:
             raise ValueError("Unknown mode")
 
