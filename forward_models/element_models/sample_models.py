@@ -401,8 +401,10 @@ class Sample_diffuser(th.nn.Module):
         ptr = F.grid_sample(
                     self.pt, grid, padding_mode="zeros", mode='bilinear', align_corners=False
             )[0,0,...]
+        
+        print(ptr.dtype,self.hole_shape.dtype)
     
-        conv = th.nn.functional.conv2d(ptr[None,None,...],self.hole_shape[None,None,...].cuda(),padding ='same')[0,0,...]
+        conv = th.nn.functional.conv2d(ptr[None,None,...],self.hole_shape[None,None,...],padding ='same')[0,0,...]
 
         thick = ((th.sigmoid(conv*5)-0.5)*2)*self.thicknes_max    
         
