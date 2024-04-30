@@ -402,7 +402,7 @@ class Sample_diffuser(th.nn.Module):
                     self.pt, grid, padding_mode="zeros", mode='bilinear', align_corners=False
             )[0,0,...]
         
-        print(ptr.dtype,self.hole_shape.dtype)
+        # print(ptr.dtype,self.hole_shape.dtype)
     
         conv = th.nn.functional.conv2d(ptr[None,None,...],self.hole_shape[None,None,...],padding ='same')[0,0,...]
 
