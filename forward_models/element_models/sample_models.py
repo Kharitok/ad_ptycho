@@ -296,6 +296,117 @@ class Sample_point_approximator(th.nn.Module):
 
 
 
+import torch.nn.functional as F
+
+pt = points_t[None,None,...].clone().to(th.float32).cuda().requires_grad_(True)
+hole_th = th.tensor(hole).to(th.float32).requires_grad_(True)
+
+
+
+
+rot = th.tensor(0.0).requires_grad_(True)
+s_x,s_y = th.tensor(1.0).requires_grad_(True),th.tensor(1.0).requires_grad_(True)
+sh_x,sh_y = th.tensor(0.0).requires_grad_(True),th.tensor(0.0).requires_grad_(True)
+thicknes_max = th.tensor(1.1e-6).requires_grad_(True)
+
+
+
+rotation = th.stack([th.stack([th.cos(rot),-th.sin(rot),zero_t]),
+            th.stack([th.sin(rot),th.cos(rot),zero_t]),
+            uni_t])
+
+
+scale = th.stack([th.stack([s_x,zero_t,zero_t]),
+            th.stack([zero_t,s_y,zero_t]),
+            uni_t])
+
+shear = th.stack([th.stack([one_t,sh_x,zero_t]),
+            th.stack([sh_y,one_t,zero_t]),
+            uni_t])
+
+
+
+full_theta = (rotation@scale@shear)[None,0:2,...].cuda()#th.tensor([[1,0,0],[0,1,0]]).to(th.float32)[None,...]
+
+grid = F.affine_grid(
+            full_theta, pt.size(), align_corners=False
+        ) 
+
+ptr = F.grid_sample(
+            pt, grid, padding_mode="zeros", mode='bilinear', align_corners=False
+    )[0,0,...]
+plt.figure()
+
+plt.imshow(ptr.cpu().detach())
+plt.colorbar()
+
+
+conv = th.nn.functional.conv2d(ptr[None,None,...],hole_th[None,None,...].cuda(),padding ='same')[0,0,...]
+
+thick = ((th.sigmoid(conv*5)-0.5)*2)*1.1e-6
+delta,beta = 3.6420075E-05 , 2.59494573E-06#0.000103282298,  1.54670233E-05
+k = 2*np.pi/wavel
+
+tf = th.exp(-k*beta*thick)*th.exp(-1j*k*thick*delta)
+plt.imshow(th.angle(tf.detach().cpu()))
+plt.colorbar()
+
+
+class Sample_diffuser(th.nn.Module):
+    """Sample model based on the known diffuser transmission and phase"""
+
+    def __init__(self,centers,hole_shape,thicknes_max = 1.1e-6,delta =3.6420075E-05 ,beta =  2.59494573E-06,wavel=0.137e-9):
+        super().__init__()
+
+        self.register_buffer("pt", centers.data) 
+
+
+        self.hole_shape = nn.Parameter(hole_shape.clone())
+        
+        self.rot = nn.Parameter(th.tensor(0.0))
+        self.s_x,self.s_y = nn.Parameter(th.tensor(1.0)),nn.Parameter(th.tensor(1.0))
+        self.sh_x,self.sh_y = nn.Parameter(th.tensor(0.0)),nn.Parameter(th.tensor(0.0))
+        self.thicknes_max = nn.Parameter(th.tensor(thicknes_max))
+
+        self.register_buffer("one_t", th.tensor(1.0).data)
+        self.register_buffer("zero_t", th.tensor(0.0).data)
+        self.register_buffer("uni_t", th.tensor([0,0,1.0]).data)
+
+        self.delta,self.beta = delta,beta#0.000103282298,  1.54670233E-05
+        self.k = 2*np.pi/wavel
+ 
+    def forward(self):
+        """Returns transfer function of the sample"""
+
+        rotation = th.stack([th.stack([th.cos(self.rot),-th.sin(self.rot),self.zero_t]),
+                    th.stack([th.sin(self.rot),th.cos(self.rot),self.zero_t]),
+                    self.uni_t])
+
+
+        scale = th.stack([th.stack([self.s_x,self.zero_t,self.zero_t]),
+                    th.stack([self.zero_t,self.s_y,self.zero_t]),
+                    self.uni_t])
+
+        shear = th.stack([th.stack([self.one_t,self.sh_x,self.zero_t]),
+                    th.stack([self.sh_y,self.one_t,self.zero_t]),
+                    self.uni_t])
+
+        full_theta = (rotation@scale@shear)[None,0:2,...]
+    
+
+        grid = F.affine_grid(
+            full_theta, self.pt.size(), align_corners=False
+        ) 
+
+        ptr = F.grid_sample(
+                    self.pt, grid, padding_mode="zeros", mode='bilinear', align_corners=False
+            )[0,0,...]
+    
+        conv = th.nn.functional.conv2d(ptr[None,None,...],self.hole_shape[None,None,...].cuda(),padding ='same')[0,0,...]
+
+        thick = ((th.sigmoid(conv*5)-0.5)*2)*self.thicknes_max    
+        
+        return th.exp(-self.k*self.beta*thick)*th.exp(-1j*self.k*thick*self.delta)
 class SampleVariableThickness(th.nn.Module):
     """Sample model based on the constant refractive index and variable htickness"""
 
