@@ -358,7 +358,7 @@ class Sample_diffuser(th.nn.Module):
     def __init__(self,centers,hole_shape,thicknes_max = 1.1e-6,delta =3.6420075E-05 ,beta =  2.59494573E-06,wavel=0.137e-9):
         super().__init__()
 
-        self.register_buffer("pt", centers.data) 
+        self.register_buffer("pt", centers[None,None,...]) 
 
 
         self.hole_shape = nn.Parameter(hole_shape.clone())
