@@ -296,60 +296,60 @@ class Sample_point_approximator(th.nn.Module):
 
 
 
-import torch.nn.functional as F
+# import torch.nn.functional as F
 
-pt = points_t[None,None,...].clone().to(th.float32).cuda().requires_grad_(True)
-hole_th = th.tensor(hole).to(th.float32).requires_grad_(True)
-
-
-
-
-rot = th.tensor(0.0).requires_grad_(True)
-s_x,s_y = th.tensor(1.0).requires_grad_(True),th.tensor(1.0).requires_grad_(True)
-sh_x,sh_y = th.tensor(0.0).requires_grad_(True),th.tensor(0.0).requires_grad_(True)
-thicknes_max = th.tensor(1.1e-6).requires_grad_(True)
+# pt = points_t[None,None,...].clone().to(th.float32).cuda().requires_grad_(True)
+# hole_th = th.tensor(hole).to(th.float32).requires_grad_(True)
 
 
 
-rotation = th.stack([th.stack([th.cos(rot),-th.sin(rot),zero_t]),
-            th.stack([th.sin(rot),th.cos(rot),zero_t]),
-            uni_t])
 
-
-scale = th.stack([th.stack([s_x,zero_t,zero_t]),
-            th.stack([zero_t,s_y,zero_t]),
-            uni_t])
-
-shear = th.stack([th.stack([one_t,sh_x,zero_t]),
-            th.stack([sh_y,one_t,zero_t]),
-            uni_t])
+# rot = th.tensor(0.0).requires_grad_(True)
+# s_x,s_y = th.tensor(1.0).requires_grad_(True),th.tensor(1.0).requires_grad_(True)
+# sh_x,sh_y = th.tensor(0.0).requires_grad_(True),th.tensor(0.0).requires_grad_(True)
+# thicknes_max = th.tensor(1.1e-6).requires_grad_(True)
 
 
 
-full_theta = (rotation@scale@shear)[None,0:2,...].cuda()#th.tensor([[1,0,0],[0,1,0]]).to(th.float32)[None,...]
-
-grid = F.affine_grid(
-            full_theta, pt.size(), align_corners=False
-        ) 
-
-ptr = F.grid_sample(
-            pt, grid, padding_mode="zeros", mode='bilinear', align_corners=False
-    )[0,0,...]
-plt.figure()
-
-plt.imshow(ptr.cpu().detach())
-plt.colorbar()
+# rotation = th.stack([th.stack([th.cos(rot),-th.sin(rot),zero_t]),
+#             th.stack([th.sin(rot),th.cos(rot),zero_t]),
+#             uni_t])
 
 
-conv = th.nn.functional.conv2d(ptr[None,None,...],hole_th[None,None,...].cuda(),padding ='same')[0,0,...]
+# scale = th.stack([th.stack([s_x,zero_t,zero_t]),
+#             th.stack([zero_t,s_y,zero_t]),
+#             uni_t])
 
-thick = ((th.sigmoid(conv*5)-0.5)*2)*1.1e-6
-delta,beta = 3.6420075E-05 , 2.59494573E-06#0.000103282298,  1.54670233E-05
-k = 2*np.pi/wavel
+# shear = th.stack([th.stack([one_t,sh_x,zero_t]),
+#             th.stack([sh_y,one_t,zero_t]),
+#             uni_t])
 
-tf = th.exp(-k*beta*thick)*th.exp(-1j*k*thick*delta)
-plt.imshow(th.angle(tf.detach().cpu()))
-plt.colorbar()
+
+
+# full_theta = (rotation@scale@shear)[None,0:2,...].cuda()#th.tensor([[1,0,0],[0,1,0]]).to(th.float32)[None,...]
+
+# grid = F.affine_grid(
+#             full_theta, pt.size(), align_corners=False
+#         ) 
+
+# ptr = F.grid_sample(
+#             pt, grid, padding_mode="zeros", mode='bilinear', align_corners=False
+#     )[0,0,...]
+# plt.figure()
+
+# plt.imshow(ptr.cpu().detach())
+# plt.colorbar()
+
+
+# conv = th.nn.functional.conv2d(ptr[None,None,...],hole_th[None,None,...].cuda(),padding ='same')[0,0,...]
+
+# thick = ((th.sigmoid(conv*5)-0.5)*2)*1.1e-6
+# delta,beta = 3.6420075E-05 , 2.59494573E-06#0.000103282298,  1.54670233E-05
+# k = 2*np.pi/wavel
+
+# tf = th.exp(-k*beta*thick)*th.exp(-1j*k*thick*delta)
+# plt.imshow(th.angle(tf.detach().cpu()))
+# plt.colorbar()
 
 
 class Sample_diffuser(th.nn.Module):
