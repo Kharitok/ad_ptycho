@@ -363,14 +363,14 @@ class Sample_diffuser(th.nn.Module):
 
         self.hole_shape = nn.Parameter(hole_shape.clone())
         
-        self.rot = nn.Parameter(th.tensor(0.0))
-        self.s_x,self.s_y = nn.Parameter(th.tensor(1.0)),nn.Parameter(th.tensor(1.0))
-        self.sh_x,self.sh_y = nn.Parameter(th.tensor(0.0)),nn.Parameter(th.tensor(0.0))
-        self.thicknes_max = nn.Parameter(th.tensor(thicknes_max))
+        self.rot = nn.Parameter(th.tensor(0.0).to(th.float32))
+        self.s_x,self.s_y = nn.Parameter(th.tensor(1.0).to(th.float32)),nn.Parameter(th.tensor(1.0).to(th.float32))
+        self.sh_x,self.sh_y = nn.Parameter(th.tensor(0.0).to(th.float32)),nn.Parameter(th.tensor(0.0).to(th.float32))
+        self.thicknes_max = nn.Parameter(th.tensor(thicknes_max).to(th.float32))
 
-        self.register_buffer("one_t", th.tensor(1.0).data)
-        self.register_buffer("zero_t", th.tensor(0.0).data)
-        self.register_buffer("uni_t", th.tensor([0,0,1.0]).data)
+        self.register_buffer("one_t", th.tensor(1.0).to(th.float32).data)
+        self.register_buffer("zero_t", th.tensor(0.0).to(th.float32).data)
+        self.register_buffer("uni_t", th.tensor([0,0,1.0]).to(th.float32).data)
 
         self.delta,self.beta = delta,beta#0.000103282298,  1.54670233E-05
         self.k = 2*np.pi/wavel
