@@ -1,7 +1,7 @@
 """
 Sample models for AD-based ptychography
 """
-# import torch.nn.functional as F
+import torch.nn.functional as F
 import torch.nn as nn
 import torch as th
 import numpy as np
