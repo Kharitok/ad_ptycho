@@ -34,7 +34,7 @@ import numpy as np
 #     )
 
 
-def shear_term(axis1, axis2, a, b):
+def shear_term(axis1, axis_2, a, b):
     return th.exp(2j * th.pi * (a * axis1 + b * axis_2))
 
 

@@ -10,7 +10,7 @@ import scipy
 import pickle
 import scipy.misc
 import scipy.signal
-import skimage.data
+# import skimage.data
 from scipy.interpolate import interp2d
 from colorsys import hsv_to_rgb
 
